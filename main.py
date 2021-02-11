@@ -7,7 +7,7 @@ from datetime import datetime
 from barcode import EAN13
 from barcode.writer import ImageWriter
 
-from dades import TOKEN, connexio, AUTORITZATS
+from dades import *
 from utils import *
 
 updater = Updater(token=TOKEN, use_context=True)
@@ -27,6 +27,8 @@ def ajuda(update, context):
     text = "Per registrar l'entrada o sortida al centre utilitza el lector de codi de barres o introdueix el teu DNI\n"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
     text = "Per obtenir el llistat de professors a substituir escriu /guardia"
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+    text = "Per a altres opcions escriu /menu"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
@@ -115,13 +117,17 @@ def llista_guardia(hora, dia):
     return text
 
 
-def guardia(update, context):
-    hora_lectiva = hora_lectiva_actual()
+def guardia_hora(hora):
     dia_lectiu = dia_lectiu_actual()
     text = "No hi ha classes en aquest moment"
-    if dia_lectiu!=0 and hora_lectiva!=0:
-        text = llista_guardia(hora_lectiva, dia_lectiu)
+    if dia_lectiu != 0 and hora != 0:
+        text = llista_guardia(hora, dia_lectiu)
+    return text
 
+
+def guardia(update, context):
+    hora_lectiva = hora_lectiva_actual()
+    text = guardia_hora(hora_lectiva)
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
@@ -162,7 +168,7 @@ def afegir_substitut(update, context, CodiHorari, Nom, Cognom, Dni):
 
 def afegir(update, context):
 
-    autoritzat = update.message.chat.username in AUTORITZATS
+    autoritzat = update.message.chat.username in GESTIO
 
     if not autoritzat:
         text = "No estàs autoritzat a realitzar aquesta acció"
@@ -184,7 +190,7 @@ def afegir(update, context):
 
 def finalitzar(update, context):
 
-    autoritzat = update.message.chat.username in AUTORITZATS
+    autoritzat = update.message.chat.username in GESTIO
 
     if not autoritzat:
         text = "No estàs autoritzat a realitzar aquesta acció"
@@ -228,12 +234,12 @@ def registreDNI(update, context):
         results = cursor.fetchall()
 
     # Usuaris autoritzats
-    autoritzat = update.message.chat.username in AUTORITZATS
+    autoritzat = update.message.chat.username in REGISTRE
 
-    if len(results) == 0:
-        text = "DNI incorrecte"
-    elif not autoritzat:
+    if not autoritzat:
         text = "No estàs autoritzat a realitzar aquesta acció"
+    elif len(results) == 0:
+        text = "DNI incorrecte"
     else:
         for row in results:
             Nom = row[0]
@@ -278,12 +284,12 @@ def registreCB(update, context):
         results = cursor.fetchall()
 
     # Usuaris autoritzats
-    autoritzat = update.message.chat.username in AUTORITZATS
+    autoritzat = update.message.chat.username in REGISTRE
 
-    if len(results)==0:
-        text = "Aquest codi de barres no està associat a cap professor"
-    elif not autoritzat:
+    if not autoritzat:
         text = "No estàs autoritzat a realitzar aquesta acció"
+    elif len(results)==0:
+        text = "Aquest codi de barres no està associat a cap professor"
     else:
         # Codi de barres correcte
         for row in results:
