@@ -7,7 +7,7 @@ from datetime import datetime
 from barcode import EAN13
 from barcode.writer import ImageWriter
 
-from dades import TOKEN, connexio
+from dades import TOKEN, connexio, AUTORITZATS
 from utils import *
 
 updater = Updater(token=TOKEN, use_context=True)
@@ -20,6 +20,7 @@ def start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
     ajuda(update, context)
     autor(update, context)
+    print(update.message.chat.username)
 
 
 def ajuda(update, context):
@@ -160,7 +161,12 @@ def afegir_substitut(update, context, CodiHorari, Nom, Cognom, Dni):
 
 
 def afegir(update, context):
-    if len(context.args)>0:
+
+    autoritzat = update.message.chat.username in AUTORITZATS
+
+    if not autoritzat:
+        text = "No estàs autoritzat a realitzar aquesta acció"
+    elif len(context.args)>0:
         CodiHorari = context.args[0]
         Nom = context.args[1]
         Cognom = context.args[2]
@@ -177,7 +183,12 @@ def afegir(update, context):
 
 
 def finalitzar(update, context):
-    if len(context.args)>0:
+
+    autoritzat = update.message.chat.username in AUTORITZATS
+
+    if not autoritzat:
+        text = "No estàs autoritzat a realitzar aquesta acció"
+    elif len(context.args)>0:
         CodiHorari = context.args[0]
         Dni = context.args[1]
 
@@ -206,9 +217,9 @@ def finalitzar(update, context):
 
 
 def registreDNI(update, context):
-    ct = connexio()
 
     # Cercar dades professor
+    ct = connexio()
     Dni = update.message.text
     Dni = Dni.upper()
     query = ("SELECT Nom,CodiHorari FROM Professor WHERE Dni = '" + Dni + "';")
@@ -216,8 +227,13 @@ def registreDNI(update, context):
         cursor.execute(query)
         results = cursor.fetchall()
 
+    # Usuaris autoritzats
+    autoritzat = update.message.chat.username in AUTORITZATS
+
     if len(results) == 0:
         text = "DNI incorrecte"
+    elif not autoritzat:
+        text = "No estàs autoritzat a realitzar aquesta acció"
     else:
         for row in results:
             Nom = row[0]
@@ -248,22 +264,26 @@ def registreDNI(update, context):
         text = missatge_entrada(Nom, current_time) if es_entrada else missatge_sortida(Nom, current_time)
 
     ct.close()
-
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
 def registreCB(update, context):
-    ct = connexio()
 
     # Cercar dades professor
+    ct = connexio()
     codi = update.message.text
     query = ("SELECT Nom,Dni,CodiHorari FROM Professor WHERE CodiBarres = '" + codi[:12] + "';")
     with ct.cursor() as cursor:
         cursor.execute(query,(codi))
         results = cursor.fetchall()
 
+    # Usuaris autoritzats
+    autoritzat = update.message.chat.username in AUTORITZATS
+
     if len(results)==0:
         text = "Aquest codi de barres no està associat a cap professor"
+    elif not autoritzat:
+        text = "No estàs autoritzat a realitzar aquesta acció"
     else:
         # Codi de barres correcte
         for row in results:
@@ -299,7 +319,6 @@ def registreCB(update, context):
         text = missatge_entrada(Nom, current_time) if es_entrada else missatge_sortida(Nom, current_time)
 
     ct.close()
-
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
