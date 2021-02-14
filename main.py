@@ -70,17 +70,11 @@ def substitut(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
-def informe(update, context):
-    text = "/setmana - informe setmanal\n"
-    text += "/mes - informe mensual"
-    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-
-
 dispatcher.add_handler(CommandHandler('menu', menu))
 dispatcher.add_handler(MessageHandler(Filters.regex('[Mm]en[uú]'), menu))
 dispatcher.add_handler(CommandHandler('professors', professors))
 dispatcher.add_handler(CommandHandler('substitut', substitut))
-dispatcher.add_handler(CommandHandler('informe', informe))
+#dispatcher.add_handler(CommandHandler('informe', informe))
 
 
 # ---------- PROFESSORS ----------
@@ -254,14 +248,21 @@ def cancel(update, context):
     return ConversationHandler.END
 
 
+def incorrecte(update, context):
+    update.message.reply_text("Valor incorrecte")
+    return ConversationHandler.END
+
+
 NOM, COGNOM, DNI, HORARI = range(4)
 
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('afegir', afegir)],
                                            states={
                                                 NOM: [MessageHandler(Filters.regex("[A-z]*"), nom)],
                                                 COGNOM: [MessageHandler(Filters.regex("[A-z]*"), cognom)],
-                                                DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), dni)],
-                                                HORARI: [MessageHandler(Filters.regex("[0-9]+"), horari)],
+                                                DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), dni),
+                                                      MessageHandler(Filters.regex(".*"), incorrecte)],
+                                                HORARI: [MessageHandler(Filters.regex("[0-9]+"), horari),
+                                                         MessageHandler(Filters.regex(".*"), incorrecte)],
                                            },
                                            fallbacks=[CommandHandler('cancel', cancel)]
                                            ))
@@ -283,13 +284,22 @@ def finalitzar_substitucio(update, context, Dni, CodiHorari):
         ct.commit()
 
     # Canviar estat titular
-    update = "UPDATE Professor SET Actiu = 1 WHERE Dni = '" + Dni + "';"
+    query = "SELECT * FROM Professor WHERE Dni = '" + Dni + "';"
     with ct.cursor() as cursor:
-        cursor.execute(update)
-        ct.commit()
-    ct.close()
+        cursor.execute(query)
+        result = cursor.fetchall()
 
-    return "Substitució finalitzada correctament"
+    if len(result)==0:
+        text = "Dni incorrecte"
+    else:
+        update = "UPDATE Professor SET Actiu = 1 WHERE Dni = '" + Dni + "';"
+        with ct.cursor() as cursor:
+            cursor.execute(update)
+            ct.commit()
+        text = "Substitució finalitzada correctament"
+
+    ct.close()
+    return text
 
 
 def finalitzar(update, context):
@@ -322,8 +332,10 @@ F_DNI, F_HORARI = range(2)
 
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('finalitzar', finalitzar)],
                                            states={
-                                                F_DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), finalitzar_dni)],
-                                                F_HORARI: [MessageHandler(Filters.regex("[0-9]+"), finalitzar_horari)],
+                                                F_DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), finalitzar_dni),
+                                                        MessageHandler(Filters.regex(".*"), incorrecte)],
+                                                F_HORARI: [MessageHandler(Filters.regex("[0-9]+"), finalitzar_horari),
+                                                           MessageHandler(Filters.regex(".*"), incorrecte)],
                                            },
                                            fallbacks=[CommandHandler('cancel', cancel)]
                                            ))
@@ -331,37 +343,44 @@ dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('finalit
 
 # ---------- INFORMES ----------
 
-
-def informe_dates(update, context):
-    context.bot.send_document(chat_id=update.effective_chat.id, document=open('horari.csv', 'rb'))
+DATA_INFORME = ['inici','final']
 
 
-def setmana(update, context):
-    if len(context.args) == 0:
-        setmana = datetime.now().isocalendar()[1]
-        text = "Informe realitzat"
-    elif context.args[0]!=int:
-        text = "Valor incorrecte"
-    else:
-        text = "Informe realitzat"
-
-    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+def informe(update, context):
+    update.message.reply_text("Introdueix la data d'inici: AAAA-MM-DD\n/cancel per aturar")
+    return INICI
 
 
-def mes(update, context):
-    if len(context.args) == 0:
-        mes = datetime.now().month
-        text = "Informe realitzat"
-    elif context.args[0] != int:
-        text = "Valor incorrecte"
-    else:
-        text = "Informe realitzat"
-
-    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+def informe_inici(update, context):
+    DATA_INFORME[0] = update.message.text
+    update.message.reply_text("Introdueix la data final: AAAA-MM-DD")
+    return FINAL
 
 
-dispatcher.add_handler(CommandHandler('informe_dates', informe_dates))
-dispatcher.add_handler(CommandHandler('mes', mes))
+def informe_final(update, context):
+    DATA_INFORME[1] = update.message.text
+    filename = informe_dates(DATA_INFORME[0],DATA_INFORME[1])
+    update.message.reply_text("Informe realitzat correctament")
+    context.bot.send_document(chat_id=update.effective_chat.id, document=open(filename, 'rb'))
+    return ConversationHandler.END
+
+
+def data_incorrecta(update, context):
+    update.message.reply_text("Data incorrecta")
+    return ConversationHandler.END
+
+
+INICI, FINAL = range(2)
+
+dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('informe', informe)],
+                                           states={
+                                               INICI: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_inici),
+                                                       MessageHandler(Filters.regex(".*"), data_incorrecta)],
+                                               FINAL: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_final),
+                                                       MessageHandler(Filters.regex(".*"), data_incorrecta)],
+                                           },
+                                           fallbacks=[CommandHandler('cancel', cancel)]
+                                           ))
 
 
 # ---------- REGISTRE ----------

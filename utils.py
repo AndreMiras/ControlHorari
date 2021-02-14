@@ -10,8 +10,7 @@ def df_profes():
     query = ("SELECT Dni,Nom,Cognom,CodiHorari FROM Professor WHERE Actiu=1;")
     with ct.cursor() as cursor:
         cursor.execute(query)
-        profes = pd.DataFrame(cursor.fetchall())
-    profes.columns = ['Dni', 'Nom', 'Cognom', 'CodiHorari']
+        profes = pd.DataFrame(cursor.fetchall(), columns=['Dni', 'Nom', 'Cognom', 'CodiHorari'])
     ct.close()
     return profes
 
