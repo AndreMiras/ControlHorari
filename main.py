@@ -2,16 +2,20 @@ import pandas as pd
 import random
 import re
 from telegram.ext import Updater
-from telegram.ext import CommandHandler, MessageHandler, Filters
+from telegram.ext import CommandHandler, MessageHandler, Filters, ConversationHandler
 from datetime import datetime
 from barcode import EAN13
 from barcode.writer import ImageWriter
 
 from dades import *
 from utils import *
+from informes import *
 
 updater = Updater(token=TOKEN, use_context=True)
 dispatcher = updater.dispatcher
+
+
+# ---------- INICI ----------
 
 
 def start(update, context):
@@ -25,16 +29,24 @@ def start(update, context):
 
 def ajuda(update, context):
     text = "Per registrar l'entrada o sortida al centre utilitza el lector de codi de barres o introdueix el teu DNI\n"
-    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-    text = "Per obtenir el llistat de professors a substituir escriu /guardia"
-    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-    text = "Per a altres opcions escriu /menu"
+    text += "Per obtenir el llistat de professors a substituir escriu /guardia\n"
+    text += "Per a altres opcions escriu /menu"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
 def autor(update, context):
     text = "Aquest bot ha sigut creat per Víctor Boix (@vboix2)"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+dispatcher.add_handler(CommandHandler('start', start))
+dispatcher.add_handler(CommandHandler('ajuda', ajuda))
+dispatcher.add_handler(MessageHandler(Filters.regex('[Aa]juda'), ajuda))
+dispatcher.add_handler(CommandHandler('help', ajuda))
+dispatcher.add_handler(CommandHandler('autor', autor))
+
+
+# ---------- MENU -----------
 
 
 def menu(update, context):
@@ -48,8 +60,30 @@ def menu(update, context):
 def professors(update, context):
     text = "/tots - llistat de tots els professors\n"
     text += "/presents - professors al centre\n"
-    text += "/absents - professors fora del centre\n"
+    text += "/absents - professors fora del centre"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+def substitut(update, context):
+    text = "/afegir - afegir substitut\n"
+    text += "/finalitzar - finalitzar substitució\n"
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+def informe(update, context):
+    text = "/setmana - informe setmanal\n"
+    text += "/mes - informe mensual"
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+dispatcher.add_handler(CommandHandler('menu', menu))
+dispatcher.add_handler(MessageHandler(Filters.regex('[Mm]en[uú]'), menu))
+dispatcher.add_handler(CommandHandler('professors', professors))
+dispatcher.add_handler(CommandHandler('substitut', substitut))
+dispatcher.add_handler(CommandHandler('informe', informe))
+
+
+# ---------- PROFESSORS ----------
 
 
 def tots(update, context):
@@ -85,6 +119,14 @@ def absents(update, context):
             text += profes_absents.loc[i, 'Nom'] + " " + profes_absents.loc[i, 'Cognom'] + "\n"
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+dispatcher.add_handler(CommandHandler('tots', tots))
+dispatcher.add_handler(CommandHandler('presents', presents))
+dispatcher.add_handler(CommandHandler('absents', absents))
+
+
+# ---------- GUÀRDIA ----------
 
 
 def llista_guardia(hora, dia):
@@ -131,13 +173,17 @@ def guardia(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
-def substitut(update, context):
-    text = "/afegir - afegir substitut\n"
-    text += "/finalitzar - finalitzar substitució\n"
-    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+dispatcher.add_handler(CommandHandler('guardia', guardia))
+dispatcher.add_handler(MessageHandler(Filters.regex('[Gg]u[aà]rdia'), guardia))
 
 
-def afegir_substitut(update, context, CodiHorari, Nom, Cognom, Dni):
+# ---------- AFEGIR SUBSTITUT ----------
+
+
+SUBSTITUT = ['Nom', 'Cognom', 'Dni', 'Horari']
+
+
+def afegir_substitut(update, context, Nom, Cognom, Dni, CodiHorari):
     # Codi barres
     nif = int(re.findall('\d+', Dni)[0])
     random.seed(nif)
@@ -169,23 +215,81 @@ def afegir_substitut(update, context, CodiHorari, Nom, Cognom, Dni):
 def afegir(update, context):
 
     autoritzat = update.message.chat.username in GESTIO
-
     if not autoritzat:
-        text = "No estàs autoritzat a realitzar aquesta acció"
-    elif len(context.args)>0:
-        CodiHorari = context.args[0]
-        Nom = context.args[1]
-        Cognom = context.args[2]
-        Dni = context.args[3]
-        text = afegir_substitut(update, context, CodiHorari, Nom, Cognom, Dni)
-
+        update.message.reply_text("No estàs autoritzat a realitzar aquesta acció")
+        return ConversationHandler.END
     else:
-        tots(update, context)
-        text = "Per afegir un substitut escriu el codi de l'horari del professor " \
-               "titular i les dades del substitut:\n" \
-               "/afegir codi_horari Nom Cognom DNI"
+        update.message.reply_text("Nom del substitut?\n/cancel per cancel·lar l'operació")
+        return NOM
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+def nom(update, context):
+    SUBSTITUT[0] = update.message.text
+    update.message.reply_text("Cognom del substitut?")
+    return COGNOM
+
+
+def cognom(update, context):
+    SUBSTITUT[1] = update.message.text
+    update.message.reply_text("DNI del substitut?")
+    return DNI
+
+
+def dni(update, context):
+    SUBSTITUT[2] = update.message.text
+    tots(update, context)
+    update.message.reply_text("Codi de l'horari del substitut?")
+    return HORARI
+
+
+def horari(update, context):
+    SUBSTITUT[3] = update.message.text
+    text = afegir_substitut(update, context, SUBSTITUT[0], SUBSTITUT[1], SUBSTITUT[2], SUBSTITUT[3])
+    update.message.reply_text(text)
+    return ConversationHandler.END
+
+
+def cancel(update, context):
+    update.message.reply_text("Operació cancel·lada")
+    return ConversationHandler.END
+
+
+NOM, COGNOM, DNI, HORARI = range(4)
+
+dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('afegir', afegir)],
+                                           states={
+                                                NOM: [MessageHandler(Filters.regex("[A-z]*"), nom)],
+                                                COGNOM: [MessageHandler(Filters.regex("[A-z]*"), cognom)],
+                                                DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), dni)],
+                                                HORARI: [MessageHandler(Filters.regex("[0-9]+"), horari)],
+                                           },
+                                           fallbacks=[CommandHandler('cancel', cancel)]
+                                           ))
+
+
+# ---------- FINALITZAR SUBSTITUCIÓ -------------
+
+
+FINALITZAR = ['DNI','Horari']
+
+
+def finalitzar_substitucio(update, context, Dni, CodiHorari):
+
+    # Eliminar substitut BD
+    ct = connexio()
+    delete = "DELETE FROM Professor WHERE Actiu = 1 AND CodiHorari = " + CodiHorari + ";"
+    with ct.cursor() as cursor:
+        cursor.execute(delete)
+        ct.commit()
+
+    # Canviar estat titular
+    update = "UPDATE Professor SET Actiu = 1 WHERE Dni = '" + Dni + "';"
+    with ct.cursor() as cursor:
+        cursor.execute(update)
+        ct.commit()
+    ct.close()
+
+    return "Substitució finalitzada correctament"
 
 
 def finalitzar(update, context):
@@ -193,33 +297,74 @@ def finalitzar(update, context):
     autoritzat = update.message.chat.username in GESTIO
 
     if not autoritzat:
-        text = "No estàs autoritzat a realitzar aquesta acció"
-    elif len(context.args)>0:
-        CodiHorari = context.args[0]
-        Dni = context.args[1]
-
-        # Eliminar substitut BD
-        ct = connexio()
-        delete = "DELETE FROM Professor WHERE Actiu = 1 AND CodiHorari = " + CodiHorari + ";"
-        with ct.cursor() as cursor:
-            cursor.execute(delete)
-            ct.commit()
-
-        # Canviar estat titular
-        update = "UPDATE Professor SET Actiu = 1 WHERE Dni = '" + Dni + "';"
-        with ct.cursor() as cursor:
-            cursor.execute(update)
-            ct.commit()
-        ct.close()
-        text = "Substitució finalitzada correctament"
-
+        update.message.reply_text("No estàs autoritzat a realitzar aquesta acció")
+        return ConversationHandler.END
     else:
-        tots(update, context)
-        text = "Per finalitzar una substitució escriu el codi de l'horari assignat al substitut " \
-               "i el DNI del professor que es reincorpora:\n" \
-               "/finalitzar codi_horari DNI_titular"
+        update.message.reply_text("DNI del professor que es reincorpora?\n/cancel per cancel·lar l'operació")
+        return F_DNI
+
+
+def finalitzar_dni(update, context):
+    FINALITZAR[0] = update.message.text
+    tots(update, context)
+    update.message.reply_text("Codi de l'horari del substitut?")
+    return F_HORARI
+
+
+def finalitzar_horari(update, context):
+    FINALITZAR[1] = update.message.text
+    text = finalitzar_substitucio(update, context, FINALITZAR[0], FINALITZAR[1])
+    update.message.reply_text(text)
+    ConversationHandler.END
+
+
+F_DNI, F_HORARI = range(2)
+
+dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('finalitzar', finalitzar)],
+                                           states={
+                                                F_DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), finalitzar_dni)],
+                                                F_HORARI: [MessageHandler(Filters.regex("[0-9]+"), finalitzar_horari)],
+                                           },
+                                           fallbacks=[CommandHandler('cancel', cancel)]
+                                           ))
+
+
+# ---------- INFORMES ----------
+
+
+def informe_dates(update, context):
+    context.bot.send_document(chat_id=update.effective_chat.id, document=open('horari.csv', 'rb'))
+
+
+def setmana(update, context):
+    if len(context.args) == 0:
+        setmana = datetime.now().isocalendar()[1]
+        text = "Informe realitzat"
+    elif context.args[0]!=int:
+        text = "Valor incorrecte"
+    else:
+        text = "Informe realitzat"
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+def mes(update, context):
+    if len(context.args) == 0:
+        mes = datetime.now().month
+        text = "Informe realitzat"
+    elif context.args[0] != int:
+        text = "Valor incorrecte"
+    else:
+        text = "Informe realitzat"
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+dispatcher.add_handler(CommandHandler('informe_dates', informe_dates))
+dispatcher.add_handler(CommandHandler('mes', mes))
+
+
+# ---------- REGISTRE ----------
 
 
 def registreDNI(update, context):
@@ -328,6 +473,13 @@ def registreCB(update, context):
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
+dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{8}[A-z]'), registreDNI))
+dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{13}'), registreCB))
+
+
+# ---------- ALTRES ----------
+
+
 def eco(update, context):
     text = update.message.text
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
@@ -338,31 +490,6 @@ def resposta(update, context):
     text = random.choice(missatges)
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
-
-dispatcher.add_handler(CommandHandler('start', start))
-dispatcher.add_handler(CommandHandler('ajuda', ajuda))
-dispatcher.add_handler(CommandHandler('help', ajuda))
-dispatcher.add_handler(CommandHandler('autor', autor))
-
-dispatcher.add_handler(CommandHandler('menu', menu))
-
-dispatcher.add_handler(CommandHandler('professors', professors))
-dispatcher.add_handler(CommandHandler('tots', tots))
-dispatcher.add_handler(CommandHandler('presents', presents))
-dispatcher.add_handler(CommandHandler('absents', absents))
-
-dispatcher.add_handler(CommandHandler('guardia', guardia))
-
-dispatcher.add_handler(CommandHandler('substitut', substitut))
-dispatcher.add_handler(CommandHandler('afegir', afegir))
-dispatcher.add_handler(CommandHandler('finalitzar', finalitzar))
-
-dispatcher.add_handler(MessageHandler(Filters.regex('[Mm]en[uú]'), menu))
-dispatcher.add_handler(MessageHandler(Filters.regex('[Aa]juda'), ajuda))
-dispatcher.add_handler(MessageHandler(Filters.regex('[Gg]u[aà]rdia'), guardia))
-
-dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{8}[A-z]'), registreDNI))
-dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{13}'), registreCB))
 
 dispatcher.add_handler(MessageHandler(Filters.regex('[Hh]ola[!]*|[Aa]d[ée]u[!]*'), eco))
 dispatcher.add_handler(MessageHandler(Filters.regex('.*'), resposta))
