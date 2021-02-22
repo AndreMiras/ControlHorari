@@ -41,7 +41,7 @@ def autor(update, context):
 
 dispatcher.add_handler(CommandHandler('start', start))
 dispatcher.add_handler(CommandHandler('ajuda', ajuda))
-dispatcher.add_handler(MessageHandler(Filters.regex('[Aa]juda'), ajuda))
+dispatcher.add_handler(MessageHandler(Filters.regex('.*[Aa]juda.*'), ajuda))
 dispatcher.add_handler(CommandHandler('help', ajuda))
 dispatcher.add_handler(CommandHandler('autor', autor))
 
@@ -74,7 +74,6 @@ dispatcher.add_handler(CommandHandler('menu', menu))
 dispatcher.add_handler(MessageHandler(Filters.regex('[Mm]en[uú]'), menu))
 dispatcher.add_handler(CommandHandler('professors', professors))
 dispatcher.add_handler(CommandHandler('substitut', substitut))
-#dispatcher.add_handler(CommandHandler('informe', informe))
 
 
 # ---------- PROFESSORS ----------
@@ -232,7 +231,7 @@ def cognom(update, context):
 def dni(update, context):
     SUBSTITUT[2] = update.message.text
     tots(update, context)
-    update.message.reply_text("Codi de l'horari del substitut?")
+    update.message.reply_text("Codi de l'horari a substituir?")
     return HORARI
 
 
@@ -257,11 +256,15 @@ NOM, COGNOM, DNI, HORARI = range(4)
 
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('afegir', afegir)],
                                            states={
-                                                NOM: [MessageHandler(Filters.regex("[A-z]*"), nom)],
-                                                COGNOM: [MessageHandler(Filters.regex("[A-z]*"), cognom)],
+                                                NOM: [MessageHandler(Filters.regex("/cancel"), cancel),
+                                                         MessageHandler(Filters.regex("[A-z]*"), nom),],
+                                                COGNOM: [MessageHandler(Filters.regex("/cancel"), cancel),
+                                                         MessageHandler(Filters.regex("[A-z]*"), cognom)],
                                                 DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), dni),
-                                                      MessageHandler(Filters.regex(".*"), incorrecte)],
+                                                        MessageHandler(Filters.regex("/cancel"), cancel),
+                                                        MessageHandler(Filters.regex(".*"), incorrecte)],
                                                 HORARI: [MessageHandler(Filters.regex("[0-9]+"), horari),
+                                                        MessageHandler(Filters.regex("/cancel"), cancel),
                                                          MessageHandler(Filters.regex(".*"), incorrecte)],
                                            },
                                            fallbacks=[CommandHandler('cancel', cancel)]
@@ -333,9 +336,11 @@ F_DNI, F_HORARI = range(2)
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('finalitzar', finalitzar)],
                                            states={
                                                 F_DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), finalitzar_dni),
-                                                        MessageHandler(Filters.regex(".*"), incorrecte)],
+                                                            MessageHandler(Filters.regex("/cancel"), cancel),
+                                                            MessageHandler(Filters.regex(".*"), incorrecte)],
                                                 F_HORARI: [MessageHandler(Filters.regex("[0-9]+"), finalitzar_horari),
-                                                           MessageHandler(Filters.regex(".*"), incorrecte)],
+                                                            MessageHandler(Filters.regex("/cancel"), cancel),
+                                                            MessageHandler(Filters.regex(".*"), incorrecte)],
                                            },
                                            fallbacks=[CommandHandler('cancel', cancel)]
                                            ))
@@ -347,8 +352,13 @@ DATA_INFORME = ['inici','final']
 
 
 def informe(update, context):
-    update.message.reply_text("Introdueix la data d'inici: AAAA-MM-DD\n/cancel per aturar")
-    return INICI
+    autoritzat = update.message.chat.username in GESTIO
+    if autoritzat:
+        update.message.reply_text("Introdueix la data d'inici: AAAA-MM-DD\n/cancel per aturar")
+        return INICI
+    else:
+        update.message.reply_text("No autoritzat")
+        return ConversationHandler.END
 
 
 def informe_inici(update, context):
@@ -375,8 +385,10 @@ INICI, FINAL = range(2)
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('informe', informe)],
                                            states={
                                                INICI: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_inici),
-                                                       MessageHandler(Filters.regex(".*"), data_incorrecta)],
+                                                        MessageHandler(Filters.regex("/cancel"), cancel),
+                                                        MessageHandler(Filters.regex(".*"), data_incorrecta)],
                                                FINAL: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_final),
+                                                       MessageHandler(Filters.regex("/cancel"), cancel),
                                                        MessageHandler(Filters.regex(".*"), data_incorrecta)],
                                            },
                                            fallbacks=[CommandHandler('cancel', cancel)]
@@ -385,13 +397,16 @@ dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('informe
 
 # ---------- REGISTRE ----------
 
+def netejaDNI(s):
+    s = s.upper()
+    dni = re.search("[A-Z]?[0-9]{7,8}[A-Z]", s)
+    return dni[0]
 
 def registreDNI(update, context):
 
     # Cercar dades professor
     ct = connexio()
-    Dni = update.message.text
-    Dni = Dni.upper()
+    Dni = netejaDNI(update.message.text)
     query = ("SELECT Nom,CodiHorari FROM Professor WHERE Dni = '" + Dni + "';")
     with ct.cursor() as cursor:
         cursor.execute(query)
@@ -444,7 +459,7 @@ def registreCB(update, context):
     codi = update.message.text
     query = ("SELECT Nom,Dni,CodiHorari FROM Professor WHERE CodiBarres = '" + codi[:12] + "';")
     with ct.cursor() as cursor:
-        cursor.execute(query,(codi))
+        cursor.execute(query)
         results = cursor.fetchall()
 
     # Usuaris autoritzats
@@ -492,7 +507,7 @@ def registreCB(update, context):
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
-dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{8}[A-z]'), registreDNI))
+dispatcher.add_handler(MessageHandler(Filters.regex('[A-z]?[0-9]{7,8}[A-z]'), registreDNI))
 dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{13}'), registreCB))
 
 
