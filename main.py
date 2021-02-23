@@ -397,17 +397,18 @@ dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('informe
 
 # ---------- REGISTRE ----------
 
-def netejaDNI(s):
-    s = s.upper()
-    dni = re.search("[A-Z]?[0-9]{7,8}[A-Z]", s)
-    return dni[0]
 
 def registreDNI(update, context):
+    text = "introdueix només les tres últimes xifres i la lletra del DNI o NIE"
+    context.bot.send_message(chat_id=update.message.chat_id, text=text)
+
+
+def registreCodi(update, context):
 
     # Cercar dades professor
     ct = connexio()
-    Dni = netejaDNI(update.message.text)
-    query = ("SELECT Nom,CodiHorari FROM Professor WHERE Dni = '" + Dni + "';")
+    codi = update.message.text.upper()
+    query = ("SELECT Nom,CodiHorari, Dni FROM Professor WHERE SUBSTRING(Dni, LENGTH(Dni)-3, 4) = '" + codi + "';")
     with ct.cursor() as cursor:
         cursor.execute(query)
         results = cursor.fetchall()
@@ -418,11 +419,12 @@ def registreDNI(update, context):
     if not autoritzat:
         text = "No estàs autoritzat a realitzar aquesta acció"
     elif len(results) == 0:
-        text = "DNI incorrecte"
+        text = "Codi incorrecte"
     else:
         for row in results:
             Nom = row[0]
             CodiHorari = str(row[1])
+            Dni = row[2]
 
         # Registrar entrada/sortida
         current_time = datetime.now().strftime("%H:%M:%S")
@@ -508,6 +510,7 @@ def registreCB(update, context):
 
 
 dispatcher.add_handler(MessageHandler(Filters.regex('[A-z]?[0-9]{7,8}[A-z]'), registreDNI))
+dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{3}[A-z]'), registreCodi))
 dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{13}'), registreCB))
 
 
