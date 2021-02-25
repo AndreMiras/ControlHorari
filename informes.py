@@ -7,6 +7,21 @@ HORA_INICI = {1:'8:10:00', 2:'9:05:00', 3:'10:00:00', 4:'10:55:00', 5:'11:25:00'
 HORA_FINAL = {1:'9:05:00', 2:'10:00:00', 3:'10:55:00', 4:'11:25:00', 5:'11:55:00', 6:'12:50:00', 7:'13:45:00', 8:'14:40:00'}
 
 
+def df_dates(inici, final):
+    v_inici = [int(i) for i in inici.split("-")]
+    v_final = [int(i) for i in final.split("-")]
+
+    data_inici = datetime(v_inici[0], v_inici[1], v_inici[2])
+    data_final = datetime(v_final[0], v_final[1], v_final[2])
+
+    dies = pd.date_range(data_inici, data_final).tolist()
+    dates = pd.DataFrame({'Data': dies})
+    dates['DiaSetmana'] = dates['Data'].apply(lambda d: d.weekday() + 1)
+    dates = dates.loc[dates['DiaSetmana'] < 6, :]
+    dates['Data'] = dates['Data'].apply(lambda d: d.strftime("%Y-%m-%d"))
+    return dates
+
+
 def df_horari():
     # Obtenció horari BD
     ct = connexio()
@@ -14,14 +29,14 @@ def df_horari():
     with ct.cursor() as cursor:
         cursor.execute(query)
         results = cursor.fetchall()
-    horari = pd.DataFrame(results, columns=['Dia','Hora','CodiHorari'])
+    horari = pd.DataFrame(results, columns=['DiaSetmana','Hora','CodiHorari'])
     ct.close()
 
     # Eliminar hores tarda
     horari = horari.loc[horari['Hora'] < 9, :]
 
     # Càlcul hores d'entrada i sortida
-    horari = horari.groupby(['Dia','CodiHorari'], as_index=False).agg({'Hora':['min','max']})
+    horari = horari.groupby(['DiaSetmana','CodiHorari'], as_index=False).agg({'Hora':['min','max']})
     horari.columns = list(map(''.join, horari.columns.values))
 
     # Tipus de dades timedelta
@@ -31,7 +46,7 @@ def df_horari():
     horari['HoraSortida'] = horari['HoraSortida'].apply(lambda x: pd.to_timedelta(x))
 
     # Selecció atributs
-    horari = horari[['Dia','CodiHorari','HoraEntrada','HoraSortida']]
+    horari = horari[['DiaSetmana','CodiHorari','HoraEntrada','HoraSortida']]
 
     return horari
 
@@ -45,7 +60,7 @@ def df_registres(inici, final):
     ct.close()
 
     registres = pd.DataFrame(results, columns=['Dni','CodiHorari','Data','RegistreEntrada','RegistreSortida'])
-    registres['Dia'] = registres['Data'].apply(lambda d: d.weekday()+1)
+    registres['Data'] = registres['Data'].apply(lambda d: d.strftime("%Y-%m-%d"))
     return registres
 
 
@@ -59,32 +74,51 @@ def df_professors():
     ct.close()
 
     profes['Nom'] = profes['Nom'] + " " + profes['Cognom']
-    profes = profes[['Dni','Nom']]
+    profes = profes[['Dni','Nom','CodiHorari']]
 
     return profes
 
 
-def informe_dates(inici, final):
-    horari = df_horari()
-    registres = df_registres(inici, final)
-    profes = df_professors()
+def format_hora(hms):
+    string_hora = "{:02}:{:02}".format(hms.seconds // 3600, hms.seconds // 60 % 60)
+    if string_hora=="nan:nan":
+        string_hora="No"
+    return string_hora
 
-    informe = registres.merge(horari, on=["CodiHorari",'Dia'], how='left')
-    informe = informe.merge(profes, on=['Dni'], how='left')
+
+def informe_dates(inici, final):
+
+    # Interval de dates i horaris
+    dates = df_dates(inici, final)
+    horari = df_horari()
+
+    informe = dates.merge(horari, on=['DiaSetmana'], how = 'left')
+    informe['HoresFeina'] = informe['HoraSortida'] - informe['HoraEntrada']
+
+    informe['HoraEntrada'] = informe['HoraEntrada'].apply(format_hora)
+    informe['HoraSortida'] = informe['HoraSortida'].apply(format_hora)
+    informe['HoresFeina'] = informe['HoresFeina'].apply(format_hora)
+
+    # Registre entrades
+    registres = df_registres(inici, final)
+    informe = informe.merge(registres, on=["CodiHorari", 'Data'], how='left')
 
     informe['HoresTreballades'] = informe['RegistreSortida'] - informe['RegistreEntrada']
-    informe['HoresFeina'] = informe['HoraSortida'] - informe['HoraEntrada']
-    #informe['HoresAbsencia'] = informe['RegistreEntrada'] - informe['HoraEntrada']
 
-    informe = informe[['Dni','Nom','Data','HoraEntrada','HoraSortida','HoresFeina','RegistreEntrada','RegistreSortida','HoresTreballades']]
+    informe['RegistreEntrada'] = informe['RegistreEntrada'].apply(format_hora)
+    informe['RegistreSortida'] = informe['RegistreSortida'].apply(format_hora)
+    informe['HoresTreballades'] = informe['HoresTreballades'].apply(format_hora)
 
-    informe['HoraEntrada'] = informe['HoraEntrada'].apply(lambda s: ("{:02}:{:02}".format(s.seconds // 3600, s.seconds // 60 % 60)))
-    informe['HoraSortida'] = informe['HoraSortida'].apply(lambda s: ("{:02}:{:02}".format(s.seconds // 3600, s.seconds // 60 % 60)))
-    informe['RegistreEntrada'] = informe['RegistreEntrada'].apply(lambda s: ("{:02}:{:02}".format(s.seconds // 3600, s.seconds // 60 % 60)))
-    informe['RegistreSortida'] = informe['RegistreSortida'].apply(lambda s: ("{:02}:{:02}".format(s.seconds // 3600, s.seconds // 60 % 60)))
-    informe['HoresFeina'] = informe['HoresFeina'].apply(lambda s: ("{:02}:{:02}".format(s.seconds // 3600, s.seconds // 60 % 60)))
-    informe['HoresTreballades'] = informe['HoresTreballades'].apply(lambda s: ("{:02}:{:02}".format(s.seconds // 3600, s.seconds // 60 % 60)))
+    # Dades professors
+    profes = df_professors()
 
+    informe = informe.merge(profes[['Nom','CodiHorari']], on=['CodiHorari'], how='left')
+    informe = informe.rename(columns={'Nom':'NomHorari'})
+
+    informe = informe.merge(profes[['Nom', 'Dni']], on=['Dni'], how='left')
+
+    # Format informe
+    informe = informe[['Data','NomHorari','HoraEntrada','HoraSortida','HoresFeina','Nom','RegistreEntrada','RegistreSortida','HoresTreballades']]
     filename = "informe_" + inici + "_" + final +".csv"
     informe.to_csv(filename, index=False)
 
