@@ -14,6 +14,8 @@ from informes import *
 updater = Updater(token=TOKEN, use_context=True)
 dispatcher = updater.dispatcher
 
+HORA = ['8:10','9:05','10:00','10:55','11:25','11:55','12:50','13:45']
+
 
 # ---------- INICI ----------
 
@@ -143,7 +145,7 @@ def llista_guardia(hora, dia):
 
     text = "Tot correcte!"
     if len(guardia) > 0 :
-        text = "Professors a substituir:\n\n"
+        text = "Professors a substituir a les " + HORA[hora-1] + ":\n\n"
         for i in guardia.index:
             text += guardia.loc[i, 'Nom'] + " " + guardia.loc[i, 'Cognom'] + ": " \
                     + guardia.loc[i, 'Assignatura'] + " " + guardia.loc[i, 'Aula'] \
