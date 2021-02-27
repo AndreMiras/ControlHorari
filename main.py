@@ -259,15 +259,15 @@ NOM, COGNOM, DNI, HORARI = range(4)
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('afegir', afegir)],
                                            states={
                                                 NOM: [MessageHandler(Filters.regex("/cancel"), cancel),
-                                                         MessageHandler(Filters.regex("[A-z]*"), nom),],
+                                                        MessageHandler(Filters.regex("[A-z]*"), nom),],
                                                 COGNOM: [MessageHandler(Filters.regex("/cancel"), cancel),
-                                                         MessageHandler(Filters.regex("[A-z]*"), cognom)],
+                                                        MessageHandler(Filters.regex("[A-z]*"), cognom)],
                                                 DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), dni),
                                                         MessageHandler(Filters.regex("/cancel"), cancel),
                                                         MessageHandler(Filters.regex(".*"), incorrecte)],
                                                 HORARI: [MessageHandler(Filters.regex("[0-9]+"), horari),
                                                         MessageHandler(Filters.regex("/cancel"), cancel),
-                                                         MessageHandler(Filters.regex(".*"), incorrecte)],
+                                                        MessageHandler(Filters.regex(".*"), incorrecte)],
                                            },
                                            fallbacks=[CommandHandler('cancel', cancel)]
                                            ))
@@ -350,48 +350,68 @@ dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('finalit
 
 # ---------- INFORMES ----------
 
-DATA_INFORME = ['inici','final']
+DADES_INFORME = ['tipus', 'inici', 'final']
 
 
 def informe(update, context):
     autoritzat = update.message.chat.username in GESTIO
     if autoritzat:
-        update.message.reply_text("Introdueix la data d'inici: AAAA-MM-DD\n/cancel per aturar")
-        return INICI
+        text = "Tipus d'informe:\n"
+        text += "/informe_assistencia - Temps treballat per dia\n"
+        text += "/informe_absencies - Absències per dia\n"
+        text += "/cancel per aturar"
+        update.message.reply_text(text)
+        return TIPUS
     else:
         update.message.reply_text("No autoritzat")
         return ConversationHandler.END
 
 
+def informe_tipus(update, context):
+    DADES_INFORME[0] = update.message.text
+    update.message.reply_text("Introdueix la data d'inici: AAAA-MM-DD")
+    return INICI
+
+
 def informe_inici(update, context):
-    DATA_INFORME[0] = update.message.text
+    DADES_INFORME[1] = update.message.text
     update.message.reply_text("Introdueix la data final: AAAA-MM-DD")
     return FINAL
 
 
 def informe_final(update, context):
-    DATA_INFORME[1] = update.message.text
-    filename = informe_dates(DATA_INFORME[0],DATA_INFORME[1])
-    update.message.reply_text("Informe realitzat correctament")
+    DADES_INFORME[2] = update.message.text
+
+    if DADES_INFORME[0] == "/informe_assistencia":
+        filename = informe_ES_dia(DADES_INFORME[1], DADES_INFORME[2])
+    elif DADES_INFORME[0] == "/informe_absencies":
+        filename = informe_absencies_dia(DADES_INFORME[1], DADES_INFORME[2])
+    else:
+        update.message.reply_text("Valor incorrecte")
+        return ConversationHandler.END
+
     context.bot.send_document(chat_id=update.effective_chat.id, document=open(filename, 'rb'))
     return ConversationHandler.END
 
 
-def data_incorrecta(update, context):
-    update.message.reply_text("Data incorrecta")
+def valor_incorrecte(update, context):
+    update.message.reply_text("Valor incorrecte")
     return ConversationHandler.END
 
 
-INICI, FINAL = range(2)
+TIPUS, INICI, FINAL = range(3)
 
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('informe', informe)],
                                            states={
-                                               INICI: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_inici),
+                                                TIPUS: [MessageHandler(Filters.regex("/cancel"), cancel),
+                                                        MessageHandler(Filters.regex("/.*"), informe_tipus),
+                                                        MessageHandler(Filters.regex(".*"), valor_incorrecte)],
+                                                INICI: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_inici),
                                                         MessageHandler(Filters.regex("/cancel"), cancel),
-                                                        MessageHandler(Filters.regex(".*"), data_incorrecta)],
-                                               FINAL: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_final),
-                                                       MessageHandler(Filters.regex("/cancel"), cancel),
-                                                       MessageHandler(Filters.regex(".*"), data_incorrecta)],
+                                                        MessageHandler(Filters.regex(".*"), valor_incorrecte)],
+                                                FINAL: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_final),
+                                                        MessageHandler(Filters.regex("/cancel"), cancel),
+                                                        MessageHandler(Filters.regex(".*"), valor_incorrecte)],
                                            },
                                            fallbacks=[CommandHandler('cancel', cancel)]
                                            ))
