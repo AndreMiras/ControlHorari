@@ -53,7 +53,7 @@ def llista_dni_absents():
 
 
 def missatge_entrada(nom, hora):
-    missatges = ["Bon dia", "Hola", "Salutacions"]
+    missatges = ["Bon dia", "Hola", "Salutacions", "Benvingut"]
     text = random.choice(missatges)
     text += " " + nom + "!\n"
     text += "Entrada registrada a les " + hora + " "
@@ -62,7 +62,7 @@ def missatge_entrada(nom, hora):
 
 
 def missatge_sortida(nom, hora):
-    missatges = ["Adéu", "Que vagi bé", "Fins aviat"]
+    missatges = ["Adéu", "Que vagi bé", "Fins aviat", "Fins la propera"]
     text = random.choice(missatges)
     text += " " + nom + "!\n"
     text += "Sortida registrada a les " + hora + " "
