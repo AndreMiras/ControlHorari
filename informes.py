@@ -132,6 +132,7 @@ def informe_absencies_dia(inici, final):
     informe['TempsAbsencia'] = informe.apply(calcul_temps_absencia, axis=1)
     informe = informe.loc[informe['TempsAbsencia'] > pd.Timedelta("0 days 00:00:00"),:]
     informe['TempsAbsencia'] = informe['TempsAbsencia'].apply(format_hora)
+    informe = informe.loc[informe['TempsAbsencia']!="00:00",:]
     informe = informe[['Data', 'Nom', 'TempsAbsencia']]
 
     filename = "informe_absencies_" + inici + "_" + final + ".csv"
