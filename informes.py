@@ -108,7 +108,9 @@ def calcul_temps_absencia(row):
     else:
         entrada = max(row['HoraEntrada'], row['RegistreEntrada'])
         sortida = min(row['HoraSortida'], row['RegistreSortida'])
-        temps_absencia = sortida - entrada
+        temps_feina = row['HoraSortida'] - row['HoraEntrada']
+        temps_treballat = sortida - entrada
+        temps_absencia = temps_feina - temps_treballat
     return temps_absencia
 
 
