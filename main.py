@@ -53,6 +53,7 @@ dispatcher.add_handler(CommandHandler('autor', autor))
 
 def menu(update, context):
     text = "/professors - llistat de professors\n"
+    text += "/horari - horari dels professors\n"
     text += "/guardia - professors a substituir\n"
     text += "/substitut - afegir o finalitzar una substitució\n"
     text += "/informe - informes d'assistència"
@@ -119,6 +120,44 @@ def absents(update, context):
 dispatcher.add_handler(CommandHandler('tots', tots))
 dispatcher.add_handler(CommandHandler('presents', presents))
 dispatcher.add_handler(CommandHandler('absents', absents))
+
+
+# ---------- HORARIS ----------
+
+def horari(update, context):
+    tots(update, context)
+    update.message.reply_text("Codi del professor?")
+    return HORARI_PROF
+
+
+def horari_professor(update, context):
+    CodiHorari = int(update.message.text)
+    Dia = dia_lectiu_actual()
+    horari = df_horari_profe(CodiHorari, Dia)
+
+    text = ""
+    if len(horari.index>0):
+        for i in horari.index:
+            text += HORA[horari.loc[i, 'Hora']-1] + " " + horari.loc[i, 'Assignatura'] + " " + horari.loc[i, 'Aula'] + " " + horari.loc[i, 'Grup'] + "\n"
+    else:
+        text += "No hi ha horari per a aquest codi o dia"
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+    return ConversationHandler.END
+
+
+def atura(update, context):
+    return ConversationHandler.END
+
+
+HORARI_PROF = range(1)
+
+dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('horari', horari)],
+                                           states={
+                                                HORARI_PROF: [MessageHandler(Filters.regex("[0-9]{1,2}"), horari_professor),
+                                                        MessageHandler(Filters.regex(".*"), atura),],
+                                           },
+                                           fallbacks=[CommandHandler('atura', atura)]
+                                           ))
 
 
 # ---------- GUÀRDIA ----------

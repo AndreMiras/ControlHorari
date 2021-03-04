@@ -7,12 +7,22 @@ from dades import connexio
 def df_profes():
     """DataFrame amb les dades dels professors actius"""
     ct = connexio()
-    query = ("SELECT Dni,Nom,Cognom,CodiHorari FROM Professor WHERE Actiu=1;")
+    query = ("SELECT Dni,Nom,Cognom,CodiHorari FROM Professor WHERE Actiu=1 ORDER BY 4;")
     with ct.cursor() as cursor:
         cursor.execute(query)
         profes = pd.DataFrame(cursor.fetchall(), columns=['Dni', 'Nom', 'Cognom', 'CodiHorari'])
     ct.close()
-    return profes.sort_values(by='CodiHorari')
+    return profes
+
+
+def df_horari_profe(codi, dia):
+    ct = connexio()
+    query = ("SELECT Hora,Assignatura,Aula,Grup FROM Horari WHERE CodiProfessor=" + str(codi) +" AND Dia=" + str(dia) + " ORDER BY 1;")
+    with ct.cursor() as cursor:
+        cursor.execute(query)
+        horari = pd.DataFrame(cursor.fetchall(), columns=['Hora', 'Assignatura', 'Aula', 'Grup'])
+    ct.close()
+    return horari
 
 
 def llista_dni_actius():
