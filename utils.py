@@ -12,7 +12,7 @@ def df_profes():
         cursor.execute(query)
         profes = pd.DataFrame(cursor.fetchall(), columns=['Dni', 'Nom', 'Cognom', 'CodiHorari'])
     ct.close()
-    return profes
+    return profes.sort_values(by='CodiHorari')
 
 
 def llista_dni_actius():
