@@ -14,7 +14,7 @@ from informes import *
 updater = Updater(token=TOKEN, use_context=True)
 dispatcher = updater.dispatcher
 
-HORA = ['8:10','9:05','10:00','10:55','11:25','11:55','12:50','13:45']
+HORA = ['8:10','9:05','10:00','10:55','11:25','11:55','12:50','13:45','16:00']
 
 
 # ---------- INICI ----------
