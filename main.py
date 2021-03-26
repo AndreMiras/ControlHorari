@@ -62,7 +62,7 @@ def menu(update, context):
 def professors(update, context):
     text = "/tots - llistat de tots els professors\n"
     text += "/presents - professors al centre\n"
-    text += "/absents - professors fora del centre"
+    text += "/absents - professors fora del centre\n"
     text += "/profes_guardia - professors de guàrdia a l'hora actual\n"
     text += "/horari - horari dels professors"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
