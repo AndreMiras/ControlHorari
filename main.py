@@ -124,40 +124,30 @@ dispatcher.add_handler(CommandHandler('absents', absents))
 
 # ---------- HORARIS ----------
 
+
 def horari(update, context):
-    tots(update, context)
-    update.message.reply_text("Codi del professor?")
-    return HORARI_PROF
+    if len(context.args) == 0:
+        tots(update, context)
+        update.message.reply_text("Indica /horari i el codi del professor\nPer exemple: /horari 9")
 
+    elif context.args[0].isnumeric():
+        CodiHorari = int(context.args[0])
+        Dia = dia_lectiu_actual()
+        horari = df_horari_profe(CodiHorari, Dia)
+        text = ""
+        if len(horari.index>0):
+            for i in horari.index:
+                text += HORA[horari.loc[i, 'Hora']-1] + " " + horari.loc[i, 'Assignatura'] + " " + horari.loc[i, 'Aula'] + " " + horari.loc[i, 'Grup'] + "\n"
+        else:
+            text += "No hi ha horari per a aquest codi o dia"
+        context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+        return ConversationHandler.END
 
-def horari_professor(update, context):
-    CodiHorari = int(update.message.text)
-    Dia = dia_lectiu_actual()
-    horari = df_horari_profe(CodiHorari, Dia)
-
-    text = ""
-    if len(horari.index>0):
-        for i in horari.index:
-            text += HORA[horari.loc[i, 'Hora']-1] + " " + horari.loc[i, 'Assignatura'] + " " + horari.loc[i, 'Aula'] + " " + horari.loc[i, 'Grup'] + "\n"
     else:
-        text += "No hi ha horari per a aquest codi o dia"
-    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-    return ConversationHandler.END
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Codi incorrecte")
 
 
-def atura(update, context):
-    return ConversationHandler.END
-
-
-HORARI_PROF = range(1)
-
-dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('horari', horari)],
-                                           states={
-                                                HORARI_PROF: [MessageHandler(Filters.regex("[0-9]{1,2}"), horari_professor),
-                                                        MessageHandler(Filters.regex(".*"), atura),],
-                                           },
-                                           fallbacks=[CommandHandler('atura', atura)]
-                                           ))
+dispatcher.add_handler(CommandHandler('horari', horari))
 
 
 # ---------- GUÀRDIA ----------
