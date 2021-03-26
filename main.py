@@ -53,7 +53,6 @@ dispatcher.add_handler(CommandHandler('autor', autor))
 
 def menu(update, context):
     text = "/professors - llistat de professors\n"
-    text += "/horari - horari dels professors\n"
     text += "/guardia - professors a substituir\n"
     text += "/substitut - afegir o finalitzar una substitució\n"
     text += "/informe - informes d'assistència"
@@ -64,6 +63,8 @@ def professors(update, context):
     text = "/tots - llistat de tots els professors\n"
     text += "/presents - professors al centre\n"
     text += "/absents - professors fora del centre"
+    text += "/profes_guardia - professors de guàrdia a l'hora actual\n"
+    text += "/horari - horari dels professors"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
@@ -117,9 +118,22 @@ def absents(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
+def profes_guardia(update, context):
+    dia = dia_lectiu_actual()
+    hora_lectiva = hora_lectiva_actual()
+    profes = df_profes_guardia(dia, hora_lectiva)
+
+    text = "Professors de guàrdia a les " + HORA[hora_lectiva - 1] + ":\n"
+    for i in profes.index:
+        text += profes.loc[i,"Nom"] + " " + profes.loc[i, "Cognom"] + "\n"
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
 dispatcher.add_handler(CommandHandler('tots', tots))
 dispatcher.add_handler(CommandHandler('presents', presents))
 dispatcher.add_handler(CommandHandler('absents', absents))
+dispatcher.add_handler(CommandHandler('profes_guardia', profes_guardia))
 
 
 # ---------- HORARIS ----------

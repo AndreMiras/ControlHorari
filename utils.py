@@ -25,6 +25,18 @@ def df_horari_profe(codi, dia):
     return horari
 
 
+def df_profes_guardia(dia, hora):
+    ct = connexio()
+    query = ("SELECT CodiProfessor FROM Horari WHERE Dia= " + str(dia) + " AND Hora = " + str(hora) + " AND Assignatura = 'G'")
+    with ct.cursor() as cursor:
+        cursor.execute(query)
+        profes_g = pd.DataFrame(cursor.fetchall(), columns=['CodiHorari'])
+    ct.close()
+    profes = df_profes()
+    profes_g = profes_g.merge(profes, how='left', on='CodiHorari')
+    return profes_g[['Nom', 'Cognom']]
+
+
 def llista_dni_actius():
     """Llista de tot els DNI de professors actius"""
     ct = connexio()
