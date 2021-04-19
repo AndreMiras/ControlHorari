@@ -123,9 +123,12 @@ def profes_guardia(update, context):
     hora_lectiva = hora_lectiva_actual()
     profes = df_profes_guardia(dia, hora_lectiva)
 
-    text = "Professors de guàrdia a les " + HORA[hora_lectiva - 1] + ":\n"
-    for i in profes.index:
-        text += profes.loc[i,"Nom"] + " " + profes.loc[i, "Cognom"] + "\n"
+    if hora_lectiva == 0:
+        text = "No estem en horari lectiu"
+    else:
+        text = "Professors de guàrdia a les " + HORA[hora_lectiva - 1] + ":\n"
+        for i in profes.index:
+            text += profes.loc[i,"Nom"] + " " + profes.loc[i, "Cognom"] + "\n"
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
