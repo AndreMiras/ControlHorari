@@ -62,7 +62,12 @@ def llista_dni_presents():
         for row in cursor.fetchall():
             llista_presents.append(row[0])
     ct.close()
-    return llista_presents
+
+    # Eliminem els professors presents però no actius a la BD
+    actius = llista_dni_actius()
+    llista_presents_actius = [value for value in llista_presents if value in actius]
+
+    return llista_presents_actius
 
 
 def llista_dni_absents():
