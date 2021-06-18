@@ -14,8 +14,6 @@ from informes import *
 updater = Updater(token=TOKEN, use_context=True)
 dispatcher = updater.dispatcher
 
-HORA = ['8:10','9:05','10:00','10:55','11:25','11:55','12:50','13:45','16:00']
-
 
 # ---------- INICI ----------
 
@@ -85,9 +83,11 @@ dispatcher.add_handler(CommandHandler('substitut', substitut))
 
 def tots(update, context):
     profes = df_profes()
-    text = ""
-    for i in profes.index:
-        text += profes.loc[i,'Nom'] + " " + profes.loc[i,'Cognom'] + " (" + str(profes.loc[i,'CodiHorari']) + ")\n"
+    text = "No hi ha professors"
+    if len(profes.index) > 0:
+        text="Llistat de tot el professorat:\n\n"
+        for i in profes.index:
+            text += profes.loc[i,'Nom'] + " " + profes.loc[i,'Cognom'] + " (" + str(profes.loc[i,'CodiHorari']) + ")\n"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
@@ -108,7 +108,7 @@ def presents(update, context):
 def absents(update, context):
     absents = pd.DataFrame({'Dni':llista_dni_absents()})
     text = "No falta ningú"
-    if len(absents)>0:
+    if len(absents.index)>0:
         profes = df_profes()
         profes_absents = absents.merge(profes, on='Dni', how='left')
         text = "Professors fora del centre:\n\n"
@@ -152,7 +152,7 @@ def horari(update, context):
         Dia = dia_lectiu_actual()
         horari = df_horari_profe(CodiHorari, Dia)
         text = ""
-        if len(horari.index>0):
+        if len(horari.index)>0:
             for i in horari.index:
                 text += HORA[horari.loc[i, 'Hora']-1] + " " + horari.loc[i, 'Assignatura'] + " " + horari.loc[i, 'Aula'] + " " + horari.loc[i, 'Grup'] + "\n"
         else:
@@ -168,36 +168,6 @@ dispatcher.add_handler(CommandHandler('horari', horari))
 
 
 # ---------- GUÀRDIA ----------
-
-
-def llista_guardia(hora, dia):
-    # Dades professors absents
-    absents = pd.DataFrame({'Dni': llista_dni_absents()})
-    profes = df_profes()
-    profes_absents = absents.merge(profes, on='Dni', how='left')
-
-    # Classes hora actual
-    query = "SELECT Assignatura, CodiProfessor, Aula, Grup FROM Horari WHERE Dia=" \
-            + str(dia) + " AND Hora=" + str(hora) + ";"
-    ct = connexio()
-    with ct.cursor() as cursor:
-        cursor.execute(query)
-        classes = pd.DataFrame(cursor.fetchall())
-    ct.close()
-    classes.columns = ['Assignatura', 'CodiHorari', 'Aula', 'Grup']
-
-    # Classes a substituir
-    guardia = profes_absents.merge(classes, on="CodiHorari", how='inner')
-
-    text = "Tot correcte!"
-    if len(guardia) > 0 :
-        text = "Professors a substituir a les " + HORA[hora-1] + ":\n\n"
-        for i in guardia.index:
-            text += guardia.loc[i, 'Nom'] + " " + guardia.loc[i, 'Cognom'] + ": " \
-                    + guardia.loc[i, 'Assignatura'] + " " + guardia.loc[i, 'Aula'] \
-                    + " " + guardia.loc[i, 'Grup'] + "\n"
-
-    return text
 
 
 def guardia_hora(hora):

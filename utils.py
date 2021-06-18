@@ -3,6 +3,7 @@ import random
 from datetime import datetime
 from dades import connexio
 
+HORA = ['8:10','9:05','10:00','10:55','11:25','11:55','12:50','13:45','16:00']
 
 def df_profes():
     """DataFrame amb les dades dels professors actius"""
@@ -131,3 +132,33 @@ def dia_lectiu_actual():
     current_time = datetime.now()
     dia = current_time.weekday()
     return dia + 1
+
+
+def llista_guardia(hora, dia):
+    # Dades professors absents
+    absents = pd.DataFrame({'Dni': llista_dni_absents()})
+    profes = df_profes()
+    profes_absents = absents.merge(profes, on='Dni', how='left')
+
+    # Classes hora actual
+    query = "SELECT Assignatura, CodiProfessor, Aula, Grup FROM Horari WHERE Dia=" \
+            + str(dia) + " AND Hora=" + str(hora) + ";"
+    ct = connexio()
+    with ct.cursor() as cursor:
+        cursor.execute(query)
+        classes = pd.DataFrame(cursor.fetchall())
+    ct.close()
+    classes.columns = ['Assignatura', 'CodiHorari', 'Aula', 'Grup']
+
+    # Classes a substituir
+    guardia = profes_absents.merge(classes, on="CodiHorari", how='inner')
+
+    text = "Tot correcte!"
+    if len(guardia) > 0 :
+        text = "Professors a substituir a les " + HORA[hora-1] + ":\n\n"
+        for i in guardia.index:
+            text += guardia.loc[i, 'Nom'] + " " + guardia.loc[i, 'Cognom'] + ": " \
+                    + guardia.loc[i, 'Assignatura'] + " " + guardia.loc[i, 'Aula'] \
+                    + " " + guardia.loc[i, 'Grup'] + "\n"
+
+    return text
