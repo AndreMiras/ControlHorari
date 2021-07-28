@@ -3,16 +3,39 @@ import random
 from datetime import datetime
 from dades import connexio
 
+HORA = ['8:10','9:05','10:00','10:55','11:25','11:55','12:50','13:45','16:00']
 
 def df_profes():
     """DataFrame amb les dades dels professors actius"""
     ct = connexio()
-    query = ("SELECT Dni,Nom,Cognom,CodiHorari FROM Professor WHERE Actiu=1;")
+    query = ("SELECT Dni,Nom,Cognom,CodiHorari FROM Professor WHERE Actiu=1 ORDER BY 4;")
     with ct.cursor() as cursor:
         cursor.execute(query)
         profes = pd.DataFrame(cursor.fetchall(), columns=['Dni', 'Nom', 'Cognom', 'CodiHorari'])
     ct.close()
     return profes
+
+
+def df_horari_profe(codi, dia):
+    ct = connexio()
+    query = ("SELECT Hora,Assignatura,Aula,Grup FROM Horari WHERE CodiProfessor=" + str(codi) +" AND Dia=" + str(dia) + " ORDER BY 1;")
+    with ct.cursor() as cursor:
+        cursor.execute(query)
+        horari = pd.DataFrame(cursor.fetchall(), columns=['Hora', 'Assignatura', 'Aula', 'Grup'])
+    ct.close()
+    return horari
+
+
+def df_profes_guardia(dia, hora):
+    ct = connexio()
+    query = ("SELECT CodiProfessor FROM Horari WHERE Dia= " + str(dia) + " AND Hora = " + str(hora) + " AND (Assignatura = 'G' OR Assignatura = 'Gp')")
+    with ct.cursor() as cursor:
+        cursor.execute(query)
+        profes_g = pd.DataFrame(cursor.fetchall(), columns=['CodiHorari'])
+    ct.close()
+    profes = df_profes()
+    profes_g = profes_g.merge(profes, how='left', on='CodiHorari')
+    return profes_g[['Nom', 'Cognom']]
 
 
 def llista_dni_actius():
@@ -40,7 +63,12 @@ def llista_dni_presents():
         for row in cursor.fetchall():
             llista_presents.append(row[0])
     ct.close()
-    return llista_presents
+
+    # Eliminem els professors presents però no actius a la BD
+    actius = llista_dni_actius()
+    llista_presents_actius = [value for value in llista_presents if value in actius]
+
+    return llista_presents_actius
 
 
 def llista_dni_absents():
@@ -53,7 +81,7 @@ def llista_dni_absents():
 
 
 def missatge_entrada(nom, hora):
-    missatges = ["Bon dia", "Hola", "Salutacions"]
+    missatges = ["Bon dia", "Hola", "Salutacions", "Benvingut"]
     text = random.choice(missatges)
     text += " " + nom + "!\n"
     text += "Entrada registrada a les " + hora + " "
@@ -62,7 +90,7 @@ def missatge_entrada(nom, hora):
 
 
 def missatge_sortida(nom, hora):
-    missatges = ["Adéu", "Que vagi bé", "Fins aviat"]
+    missatges = ["Adéu", "Que vagi bé", "Fins aviat", "Fins la propera"]
     text = random.choice(missatges)
     text += " " + nom + "!\n"
     text += "Sortida registrada a les " + hora + " "
@@ -104,3 +132,33 @@ def dia_lectiu_actual():
     current_time = datetime.now()
     dia = current_time.weekday()
     return dia + 1
+
+
+def llista_guardia(hora, dia):
+    # Dades professors absents
+    absents = pd.DataFrame({'Dni': llista_dni_absents()})
+    profes = df_profes()
+    profes_absents = absents.merge(profes, on='Dni', how='left')
+
+    # Classes hora actual
+    query = "SELECT Assignatura, CodiProfessor, Aula, Grup FROM Horari WHERE Dia=" \
+            + str(dia) + " AND Hora=" + str(hora) + ";"
+    ct = connexio()
+    with ct.cursor() as cursor:
+        cursor.execute(query)
+        classes = pd.DataFrame(cursor.fetchall())
+    ct.close()
+    classes.columns = ['Assignatura', 'CodiHorari', 'Aula', 'Grup']
+
+    # Classes a substituir
+    guardia = profes_absents.merge(classes, on="CodiHorari", how='inner')
+
+    text = "Tot correcte!"
+    if len(guardia) > 0 :
+        text = "Professors a substituir a les " + HORA[hora-1] + ":\n\n"
+        for i in guardia.index:
+            text += guardia.loc[i, 'Nom'] + " " + guardia.loc[i, 'Cognom'] + ": " \
+                    + guardia.loc[i, 'Assignatura'] + " " + guardia.loc[i, 'Aula'] \
+                    + " " + guardia.loc[i, 'Grup'] + "\n"
+
+    return text
