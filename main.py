@@ -130,7 +130,7 @@ def llista_guardia(hora, dia):
     profes_absents = absents.merge(profes, on='Dni', how='left')
 
     # Classes hora actual
-    query = "SELECT Assignatura, CodiProfessor, Aula, Grup FROM Horari WHERE Dia=" \
+    query = "SELECT Assignatura, CodiHorari, Aula, Grup FROM Horari WHERE Dia=" \
             + str(dia) + " AND Hora=" + str(hora) + ";"
     ct = connexio()
     with ct.cursor() as cursor:
@@ -372,15 +372,16 @@ def data_incorrecta(update, context):
 
 INICI, FINAL = range(2)
 
-dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('informe', informe)],
-                                           states={
-                                               INICI: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_inici),
-                                                       MessageHandler(Filters.regex(".*"), data_incorrecta)],
-                                               FINAL: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_final),
-                                                       MessageHandler(Filters.regex(".*"), data_incorrecta)],
-                                           },
-                                           fallbacks=[CommandHandler('cancel', cancel)]
-                                           ))
+dispatcher.add_handler(
+    ConversationHandler(entry_points=[CommandHandler('informe', informe)],
+                        states={
+                                INICI: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_inici),
+                                        MessageHandler(Filters.regex(".*"), data_incorrecta)],
+                                FINAL: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_final),
+                                        MessageHandler(Filters.regex(".*"), data_incorrecta)],
+                                },
+                        fallbacks=[CommandHandler('cancel', cancel)]
+                        ))
 
 
 # ---------- REGISTRE ----------
@@ -512,5 +513,6 @@ def resposta(update, context):
 
 dispatcher.add_handler(MessageHandler(Filters.regex('[Hh]ola[!]*|[Aa]d[ée]u[!]*'), eco))
 dispatcher.add_handler(MessageHandler(Filters.regex('.*'), resposta))
+
 
 updater.start_polling()

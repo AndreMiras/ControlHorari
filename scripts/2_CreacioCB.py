@@ -28,12 +28,17 @@ def generaCodi(dni):
 profes['CodiBarres'] = profes['Dni'].apply(generaCodi)
 
 
+# Directori codi
+
+if not os.path.exists(dir_path + "/../codis"):
+    os.makedirs(dir_path + "/../codis")
+
 # Imprimir codi de barres
 for i in profes.index:
     codi = str(profes.loc[i, 'CodiBarres'])
     nom = profes.loc[i, 'Nom'] + profes.loc[i, 'Cognom']
     my_code = EAN13(codi, writer=ImageWriter())
-    my_code.save(nom)
+    my_code.save(dir_path + "/../codis/" + nom)
 
 # Exportar dades
 profes.to_csv(dir_path + '/../files/professors.csv', index=False)

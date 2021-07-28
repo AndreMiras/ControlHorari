@@ -33,34 +33,19 @@ for i in profes.index:
 # ---------- Horari -----------
 
 # Importació de dades dels horaris
-horari = pd.read_csv(dir_path + '/../files/horari_tot.csv', sep=";", dtype=str)
-
-# Neteja de dades
-COLS = ['DIA,C,1','HORA,C,2','ABRE_ASIG,C,5',
-        'NUM_PROF,C,4', 'ABRE_AULA,C,5','ABRE_GRUP,C,5']
-horari = horari[COLS]
-horari.columns = ['Dia','Hora','Assignatura',
-                  'CodiProfessor', 'Aula', 'Grup']
-
-horari = horari.fillna('')
-
-horari['Grup'] = horari.groupby(['Dia','Hora','CodiProfessor'])['Grup'].transform(lambda s: "-".join(s))
-horari.drop_duplicates(inplace=True)
-
-horari.to_csv(dir_path + '/../files/horari.csv')
-
+horari = pd.read_csv(dir_path + '/../files/horari.csv', sep=";", dtype=str)
 
 for i in horari.index:
     Dia = horari.loc[i,'Dia']
     Hora = horari.loc[i,'Hora']
     Assignatura = horari.loc[i, 'Assignatura']
-    CodiProfessor = horari.loc[i,'CodiProfessor']
+    CodiHorari = horari.loc[i,'CodiHorari']
     Aula = horari.loc[i,'Aula']
     Grup = horari.loc[i,'Grup']
 
-    insert = "INSERT INTO Horari (Dia, Hora, Assignatura, CodiProfessor, Aula, Grup) " \
+    insert = "INSERT INTO Horari (Dia, Hora, Assignatura, CodiHorari, Aula, Grup) " \
              "VALUES (" + Dia + ", " + Hora + ", '" + Assignatura + "', " \
-             + CodiProfessor + ", '" + Aula + "', '" + Grup + "');"
+             + CodiHorari + ", '" + Aula + "', '" + Grup + "');"
 
     with connection.cursor() as cursor:
         cursor.execute(insert)
