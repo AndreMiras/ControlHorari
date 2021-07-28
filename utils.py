@@ -18,7 +18,7 @@ def df_profes():
 
 def df_horari_profe(codi, dia):
     ct = connexio()
-    query = ("SELECT Hora,Assignatura,Aula,Grup FROM Horari WHERE CodiProfessor=" + str(codi) +" AND Dia=" + str(dia) + " ORDER BY 1;")
+    query = ("SELECT Hora,Assignatura,Aula,Grup FROM Horari WHERE CodiHorari=" + str(codi) +" AND Dia=" + str(dia) + " ORDER BY 1;")
     with ct.cursor() as cursor:
         cursor.execute(query)
         horari = pd.DataFrame(cursor.fetchall(), columns=['Hora', 'Assignatura', 'Aula', 'Grup'])
@@ -28,7 +28,7 @@ def df_horari_profe(codi, dia):
 
 def df_profes_guardia(dia, hora):
     ct = connexio()
-    query = ("SELECT CodiProfessor FROM Horari WHERE Dia= " + str(dia) + " AND Hora = " + str(hora) + " AND (Assignatura = 'G' OR Assignatura = 'Gp')")
+    query = ("SELECT CodiHorari FROM Horari WHERE Dia= " + str(dia) + " AND Hora = " + str(hora) + " AND (Assignatura = 'G' OR Assignatura = 'Gp')")
     with ct.cursor() as cursor:
         cursor.execute(query)
         profes_g = pd.DataFrame(cursor.fetchall(), columns=['CodiHorari'])
@@ -141,7 +141,7 @@ def llista_guardia(hora, dia):
     profes_absents = absents.merge(profes, on='Dni', how='left')
 
     # Classes hora actual
-    query = "SELECT Assignatura, CodiProfessor, Aula, Grup FROM Horari WHERE Dia=" \
+    query = "SELECT Assignatura, CodiHorari, Aula, Grup FROM Horari WHERE Dia=" \
             + str(dia) + " AND Hora=" + str(hora) + ";"
     ct = connexio()
     with ct.cursor() as cursor:

@@ -33,7 +33,9 @@ for i in profes.index:
 # ---------- Horari -----------
 
 # Importació de dades dels horaris
-horari = pd.read_csv(dir_path + '/../files/horari.csv', sep=";", dtype=str)
+horari = pd.read_csv(dir_path + '/../files/horari.csv', sep=",", dtype=str)
+
+horari = horari.fillna('')
 
 for i in horari.index:
     Dia = horari.loc[i,'Dia']

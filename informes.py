@@ -33,7 +33,7 @@ def df_horari():
     """
     # Obtenció horari BD
     ct = connexio()
-    query = ("SELECT Dia, Hora, CodiProfessor FROM Horari;")
+    query = ("SELECT Dia, Hora, CodiHorari FROM Horari;")
     with ct.cursor() as cursor:
         cursor.execute(query)
         results = cursor.fetchall()
