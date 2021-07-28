@@ -1,9 +1,9 @@
 import pandas as pd
-import random
 from datetime import datetime
 from dades import connexio
 
 HORA = ['8:10','9:05','10:00','10:55','11:25','11:55','12:50','13:45','16:00']
+
 
 def df_profes():
     """DataFrame amb les dades dels professors actius"""
@@ -78,24 +78,6 @@ def llista_dni_absents():
     for i in presents:
         dni.remove(i)
     return dni
-
-
-def missatge_entrada(nom, hora):
-    missatges = ["Bon dia", "Hola", "Salutacions", "Benvingut"]
-    text = random.choice(missatges)
-    text += " " + nom + "!\n"
-    text += "Entrada registrada a les " + hora + " "
-    text +=  u"\U000027A1"
-    return text
-
-
-def missatge_sortida(nom, hora):
-    missatges = ["Adéu", "Que vagi bé", "Fins aviat", "Fins la propera"]
-    text = random.choice(missatges)
-    text += " " + nom + "!\n"
-    text += "Sortida registrada a les " + hora + " "
-    text += u"\U00002705"
-    return text
 
 
 def hora_lectiva_actual():
