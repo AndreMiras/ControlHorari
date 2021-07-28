@@ -1,15 +1,16 @@
-import pandas as pd
+#import pandas as pd
 import random
 import re
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler, Filters, ConversationHandler
-from datetime import datetime
+#from datetime import datetime
 from barcode import EAN13
 from barcode.writer import ImageWriter
 
 from dades import *
 from utils import *
 from informes import *
+import registre
 
 updater = Updater(token=TOKEN, use_context=True)
 dispatcher = updater.dispatcher
@@ -50,10 +51,9 @@ dispatcher.add_handler(CommandHandler('autor', autor))
 
 
 def menu(update, context):
-    text = "/professors - llistat de professors\n"
-    text += "/guardia - professors a substituir\n"
-    text += "/substitut - afegir o finalitzar una substitució\n"
-    text += "/informe - informes d'assistència"
+    text = "/guardia - professors a substituir\n"
+    text += "/professors - llistat de professors\n"
+    text += "/gestio - informes i substitucions"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
@@ -66,6 +66,12 @@ def professors(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
+def gestio(update, context):
+    text = "/substitut - afegir o finalitzar una substitució\n"
+    text += "/informe - informes d'assistència"
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
 def substitut(update, context):
     text = "/afegir - afegir substitut\n"
     text += "/finalitzar - finalitzar substitució\n"
@@ -75,6 +81,7 @@ def substitut(update, context):
 dispatcher.add_handler(CommandHandler('menu', menu))
 dispatcher.add_handler(MessageHandler(Filters.regex('[Mm]en[uú]'), menu))
 dispatcher.add_handler(CommandHandler('professors', professors))
+dispatcher.add_handler(CommandHandler('gestio', gestio))
 dispatcher.add_handler(CommandHandler('substitut', substitut))
 
 
@@ -244,7 +251,7 @@ def afegir_substitut(update, context, Nom, Cognom, Dni, CodiHorari):
 
 def afegir(update, context):
 
-    autoritzat = update.message.chat.username in GESTIO
+    autoritzat = update.message.chat.username in GESTIO+ADMIN
     if not autoritzat:
         update.message.reply_text("No estàs autoritzat a realitzar aquesta acció")
         return ConversationHandler.END
@@ -344,7 +351,7 @@ def finalitzar_substitucio(update, context, Dni, CodiHorari):
 
 def finalitzar(update, context):
 
-    autoritzat = update.message.chat.username in GESTIO
+    autoritzat = update.message.chat.username in GESTIO+ADMIN
 
     if not autoritzat:
         update.message.reply_text("No estàs autoritzat a realitzar aquesta acció")
@@ -460,114 +467,45 @@ def registreDNI(update, context):
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
-def registreCodi(update, context):
-
-    # Cercar dades professor
-    ct = connexio()
-    codi = update.message.text.upper()
-    query = ("SELECT Nom,CodiHorari, Dni FROM Professor WHERE SUBSTRING(Dni, LENGTH(Dni)-3, 4) = '" + codi + "';")
-    with ct.cursor() as cursor:
-        cursor.execute(query)
-        results = cursor.fetchall()
+def registreCodiDNI(update, context):
 
     # Usuaris autoritzats
-    autoritzat = update.message.chat.username in REGISTRE
+    autoritzat = update.message.chat.username in REGISTRE+ADMIN
 
-    if not autoritzat:
-        text = "No estàs autoritzat a realitzar aquesta acció"
-    elif len(results) == 0:
-        text = "Codi incorrecte"
-    else:
-        for row in results:
-            Nom = row[0]
-            CodiHorari = str(row[1])
-            Dni = row[2]
+    text = "No estàs autoritzat a realitzar aquesta acció"
 
-        # Registrar entrada/sortida
-        current_time = datetime.now().strftime("%H:%M:%S")
-        current_day = datetime.today().strftime("%Y-%m-%d")
+    if autoritzat:
+        codiDNI = update.message.text.upper()
+        dades_prof = registre.cercaDNI(codiDNI)
 
-        query = ("SELECT idRegistre FROM Registre WHERE Data='" + current_day + "' AND Dni='" + Dni + "' AND HoraSortida IS NULL;")
-        with ct.cursor() as cursor:
-            cursor.execute(query)
-            results = cursor.fetchall()
-
-        if len(results)==0:
-            insert = "INSERT INTO Registre (Dni, CodiHorari, Data, HoraEntrada)" \
-                     " VALUES ('" + Dni + "', '" + CodiHorari + "', '" + current_day + "', '" + current_time + "');"
-            es_entrada = True
+        if len(dades_prof) == 0:
+            text = "Codi incorrecte"
         else:
-            for row in results:
-                idRegistre = str(row[0])
-            insert = "UPDATE Registre SET HoraSortida = '" + current_time + "' WHERE idRegistre = " + idRegistre + ";"
-            es_entrada = False
+            text = registre.registreBD(dades_prof)
 
-        with ct.cursor() as cursor:
-            cursor.execute(insert)
-            ct.commit()
-        text = missatge_entrada(Nom, current_time) if es_entrada else missatge_sortida(Nom, current_time)
-
-    ct.close()
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
 def registreCB(update, context):
 
-    # Cercar dades professor
-    ct = connexio()
-    codi = update.message.text
-    query = ("SELECT Nom,Dni,CodiHorari FROM Professor WHERE CodiBarres = '" + codi[:12] + "';")
-    with ct.cursor() as cursor:
-        cursor.execute(query)
-        results = cursor.fetchall()
-
     # Usuaris autoritzats
-    autoritzat = update.message.chat.username in REGISTRE
+    autoritzat = update.message.chat.username in REGISTRE+ADMIN
 
-    if not autoritzat:
-        text = "No estàs autoritzat a realitzar aquesta acció"
-    elif len(results)==0:
-        text = "Aquest codi de barres no està associat a cap professor"
-    else:
-        # Codi de barres correcte
-        for row in results:
-            Nom = row[0]
-            Dni = row[1]
-            CodiHorari = str(row[2])
+    text = "No estàs autoritzat a realitzar aquesta acció"
 
-        # Obtenir data i hora
-        current_time = datetime.now().strftime("%H:%M:%S")
-        current_day = datetime.today().strftime("%Y-%m-%d")
+    if autoritzat:
+        dades_prof = registre.cercaCB(update.message.text)
 
-        # Registrar entrada/sortida
-        query = ("SELECT idRegistre FROM Registre WHERE Data='" + current_day + "' AND Dni='" + Dni + "' AND HoraSortida IS NULL;")
-
-        with ct.cursor() as cursor:
-            cursor.execute(query)
-            results = cursor.fetchall()
-        for row in results:
-            idRegistre = str(row[0])
-
-        if len(results) == 0:
-            insert = "INSERT INTO Registre (Dni, CodiHorari, Data, HoraEntrada)" \
-                     " VALUES ('" + Dni + "', '" + CodiHorari + "', '" + current_day + "', '" + current_time + "');"
-            es_entrada = True
+        if len(dades_prof)==0:
+            text = "Aquest codi de barres no està associat a cap professor"
         else:
-            insert = "UPDATE Registre SET HoraSortida = '" + current_time + "' WHERE idRegistre = " + idRegistre + ";"
-            es_entrada = False
+            text = registre.registreBD(dades_prof)
 
-        with ct.cursor() as cursor:
-            cursor.execute(insert)
-            ct.commit()
-
-        text = missatge_entrada(Nom, current_time) if es_entrada else missatge_sortida(Nom, current_time)
-
-    ct.close()
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
 dispatcher.add_handler(MessageHandler(Filters.regex('[A-z]?[0-9]{7,8}[A-z]'), registreDNI))
-dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{3}[A-z]'), registreCodi))
+dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{3}[A-z]'), registreCodiDNI))
 dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{13}'), registreCB))
 
 
