@@ -1,16 +1,16 @@
-#import pandas as pd
 import random
 import re
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler, Filters, ConversationHandler
-#from datetime import datetime
 from barcode import EAN13
 from barcode.writer import ImageWriter
 
+import registre
+import professors
 from dades import *
 from utils import *
 from informes import *
-import registre
+from guardia import *
 
 updater = Updater(token=TOKEN, use_context=True)
 dispatcher = updater.dispatcher
@@ -57,7 +57,7 @@ def menu(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
-def professors(update, context):
+def menu_professors(update, context):
     text = "/tots - llistat de tots els professors\n"
     text += "/presents - professors al centre\n"
     text += "/absents - professors fora del centre\n"
@@ -66,13 +66,13 @@ def professors(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
-def gestio(update, context):
+def menu_gestio(update, context):
     text = "/substitut - afegir o finalitzar una substitució\n"
     text += "/informe - informes d'assistència"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
-def substitut(update, context):
+def menu_substitut(update, context):
     text = "/afegir - afegir substitut\n"
     text += "/finalitzar - finalitzar substitució\n"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
@@ -80,98 +80,9 @@ def substitut(update, context):
 
 dispatcher.add_handler(CommandHandler('menu', menu))
 dispatcher.add_handler(MessageHandler(Filters.regex('[Mm]en[uú]'), menu))
-dispatcher.add_handler(CommandHandler('professors', professors))
-dispatcher.add_handler(CommandHandler('gestio', gestio))
-dispatcher.add_handler(CommandHandler('substitut', substitut))
-
-
-# ---------- PROFESSORS ----------
-
-
-def tots(update, context):
-    profes = df_profes()
-    text = "No hi ha professors"
-    if len(profes.index) > 0:
-        text="Llistat de tot el professorat:\n\n"
-        for i in profes.index:
-            text += profes.loc[i,'Nom'] + " " + profes.loc[i,'Cognom'] + " (" + str(profes.loc[i,'CodiHorari']) + ")\n"
-    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-
-
-def presents(update, context):
-    dni = llista_dni_presents()
-    text = "No hi ha ningú"
-    if len(dni) > 0 :
-        presents = pd.DataFrame({'Dni':dni})
-        profes = df_profes()
-        profes_presents = presents.merge(profes, on='Dni', how='left')
-        text = "Professors al centre:\n\n"
-        for i in profes_presents.index:
-            text += profes_presents.loc[i, 'Nom'] + " " + profes_presents.loc[i, 'Cognom'] + "\n"
-
-    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-
-
-def absents(update, context):
-    absents = pd.DataFrame({'Dni':llista_dni_absents()})
-    text = "No falta ningú"
-    if len(absents.index)>0:
-        profes = df_profes()
-        profes_absents = absents.merge(profes, on='Dni', how='left')
-        text = "Professors fora del centre:\n\n"
-        for i in profes_absents.index:
-            text += profes_absents.loc[i, 'Nom'] + " " + profes_absents.loc[i, 'Cognom'] + "\n"
-
-    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-
-
-def profes_guardia(update, context):
-    dia = dia_lectiu_actual()
-    hora_lectiva = hora_lectiva_actual()
-    profes = df_profes_guardia(dia, hora_lectiva)
-
-    if hora_lectiva == 0:
-        text = "No estem en horari lectiu"
-    else:
-        text = "Professors de guàrdia a les " + HORA[hora_lectiva - 1] + ":\n"
-        for i in profes.index:
-            text += profes.loc[i,"Nom"] + " " + profes.loc[i, "Cognom"] + "\n"
-
-    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-
-
-dispatcher.add_handler(CommandHandler('tots', tots))
-dispatcher.add_handler(CommandHandler('presents', presents))
-dispatcher.add_handler(CommandHandler('absents', absents))
-dispatcher.add_handler(CommandHandler('profes_guardia', profes_guardia))
-
-
-# ---------- HORARIS ----------
-
-
-def horari(update, context):
-    if len(context.args) == 0:
-        tots(update, context)
-        update.message.reply_text("Indica /horari i el codi del professor\nPer exemple: /horari 9")
-
-    elif context.args[0].isnumeric():
-        CodiHorari = int(context.args[0])
-        Dia = dia_lectiu_actual()
-        horari = df_horari_profe(CodiHorari, Dia)
-        text = ""
-        if len(horari.index)>0:
-            for i in horari.index:
-                text += HORA[horari.loc[i, 'Hora']-1] + " " + horari.loc[i, 'Assignatura'] + " " + horari.loc[i, 'Aula'] + " " + horari.loc[i, 'Grup'] + "\n"
-        else:
-            text += "No hi ha horari per a aquest codi o dia"
-        context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-        return ConversationHandler.END
-
-    else:
-        context.bot.send_message(chat_id=update.effective_chat.id, text="Codi incorrecte")
-
-
-dispatcher.add_handler(CommandHandler('horari', horari))
+dispatcher.add_handler(CommandHandler('professors', menu_professors))
+dispatcher.add_handler(CommandHandler('gestio', menu_gestio))
+dispatcher.add_handler(CommandHandler('substitut', menu_substitut))
 
 
 # ---------- GUÀRDIA ----------
@@ -212,6 +123,50 @@ def text_guardia(update, context):
 
 dispatcher.add_handler(CommandHandler('guardia', guardia))
 dispatcher.add_handler(MessageHandler(Filters.regex('[Gg]u[aà]rdia'), text_guardia))
+
+
+# ---------- PROFESSORS ----------
+
+
+def tots(update, context):
+    text = professors.tots()
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+def presents(update, context):
+    text = professors.presents()
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+def absents(update, context):
+    text = professors.absents()
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+def profes_guardia(update, context):
+    text = professors.guardia()
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+def horari(update, context):
+    if len(context.args) == 0:
+        tots(update, context)
+        text = "Indica /horari i el codi del professor\nPer exemple: /horari 9"
+
+    elif context.args[0].isnumeric():
+        codiHorari = int(context.args[0])
+        text = professors.horari(codiHorari)
+
+    else:
+        text="Codi incorrecte"
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+dispatcher.add_handler(CommandHandler('tots', tots))
+dispatcher.add_handler(CommandHandler('presents', presents))
+dispatcher.add_handler(CommandHandler('absents', absents))
+dispatcher.add_handler(CommandHandler('profes_guardia', profes_guardia))
+dispatcher.add_handler(CommandHandler('horari', horari))
 
 
 # ---------- AFEGIR SUBSTITUT ----------
