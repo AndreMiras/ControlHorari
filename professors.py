@@ -43,6 +43,17 @@ def df_profes_guardia(dia, hora):
     return profes_g[['Nom', 'Cognom']]
 
 
+def df_profes_absents():
+    # DataFrame amb les dades dels professors absents
+    # Dni, Nom, Cognom, CodiHorari
+
+    absents = pd.DataFrame({'Dni': llista_dni_absents()})
+    profes = df_profes()
+    profes_absents = absents.merge(profes, on='Dni', how='left')
+
+    return profes_absents
+
+
 def llista_dni_actius():
     """Llista de tot els DNI de professors actius"""
     ct = connexio()
@@ -110,14 +121,13 @@ def presents():
 
 
 def absents():
-    absents = pd.DataFrame({'Dni': llista_dni_absents()})
-    text = "No falta ningú"
+    absents = df_profes_absents()
     if len(absents.index) > 0:
-        profes = df_profes()
-        profes_absents = absents.merge(profes, on='Dni', how='left')
         text = "Professors fora del centre:\n\n"
-        for i in profes_absents.index:
-            text += profes_absents.loc[i, 'Nom'] + " " + profes_absents.loc[i, 'Cognom'] + "\n"
+        for i in absents.index:
+            text += absents.loc[i, 'Nom'] + " " + absents.loc[i, 'Cognom'] + "\n"
+    else:
+        text = "No falta ningú"
     return text
 
 

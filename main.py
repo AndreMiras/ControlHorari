@@ -7,10 +7,11 @@ from barcode.writer import ImageWriter
 
 import registre
 import professors
+import guardia
 from dades import *
 from utils import *
 from informes import *
-from guardia import *
+
 
 updater = Updater(token=TOKEN, use_context=True)
 dispatcher = updater.dispatcher
@@ -88,41 +89,31 @@ dispatcher.add_handler(CommandHandler('substitut', menu_substitut))
 # ---------- GUÀRDIA ----------
 
 
-def guardia_hora(hora):
-    dia_lectiu = dia_lectiu_actual()
-    text = "No hi ha classes en aquest moment"
-    if dia_lectiu != 0 and hora != 0:
-        text = llista_guardia(hora, dia_lectiu)
-    return text
-
-
-def guardia(update, context):
+def guardia_command(update, context):
     if len(context.args) == 0:
-        hora_lectiva = hora_lectiva_actual()
-        text = guardia_hora(hora_lectiva)
-        context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+        hora = hora_lectiva_actual()
+        dia = dia_lectiu_actual()
+        text = guardia.llista(dia, hora)
 
     elif context.args[0].isnumeric():
-        hora_lectiva = int(context.args[0])
-
-        if hora_lectiva>0 and hora_lectiva<9:
-            text = guardia_hora(hora_lectiva)
-        else:
-            text = "El nombre ha de ser l'hora lectiva, entre 1 i 8"
-        context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+        hora = int(context.args[0])
+        dia = dia_lectiu_actual()
+        text = guardia.llista(dia, hora)
 
     else:
-        context.bot.send_message(chat_id=update.effective_chat.id, text="El codi ha de ser un nombre entre 1 i 8")
-
-
-def text_guardia(update, context):
-    hora_lectiva = hora_lectiva_actual()
-    text = guardia_hora(hora_lectiva)
+        text="L'hora ha de ser un nombre entre 1 i 8"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
-dispatcher.add_handler(CommandHandler('guardia', guardia))
-dispatcher.add_handler(MessageHandler(Filters.regex('[Gg]u[aà]rdia'), text_guardia))
+def guardia_message(update, context):
+    hora = hora_lectiva_actual()
+    dia = dia_lectiu_actual()
+    text = guardia.llista(dia, hora)
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+dispatcher.add_handler(CommandHandler('guardia', guardia_command))
+dispatcher.add_handler(MessageHandler(Filters.regex('[Gg]u[aà]rdia'), guardia_message))
 
 
 # ---------- PROFESSORS ----------

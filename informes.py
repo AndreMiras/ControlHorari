@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime
 
-from utils import connexio
+from dades import connexio
 
 HORA_INICI = {1:'8:10:00', 2:'9:05:00', 3:'10:00:00', 4:'10:55:00', 5:'11:25:00', 6:'11:55:00', 7:'12:50:00', 8:'13:45:00'}
 HORA_FINAL = {1:'9:05:00', 2:'10:00:00', 3:'10:55:00', 4:'11:25:00', 5:'11:55:00', 6:'12:50:00', 7:'13:45:00', 8:'14:40:00'}

@@ -1,6 +1,6 @@
 import random
 import datetime
-from utils import connexio
+from dades import connexio
 
 
 def cercaCB(codi):
