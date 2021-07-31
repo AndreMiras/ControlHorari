@@ -4,7 +4,7 @@ from utils import *
 from dades import connexio
 
 
-def df_profes():
+def df_professors():
     """DataFrame amb les dades dels professors actius"""
     ct = connexio()
     query = ("SELECT Dni,Nom,Cognom,CodiHorari FROM Professor WHERE Actiu=1 ORDER BY 4;")
@@ -12,7 +12,10 @@ def df_profes():
         cursor.execute(query)
         profes = pd.DataFrame(cursor.fetchall(), columns=['Dni', 'Nom', 'Cognom', 'CodiHorari'])
     ct.close()
-    profes.fillna('?', inplace=True)
+
+    profes['Nom'] = profes['Nom'] + " " + profes['Cognom']
+    profes.drop(columns=['Cognom'], inplace=True)
+
     return profes
 
 
@@ -24,7 +27,10 @@ def df_substituts():
         cursor.execute(query)
         profes = pd.DataFrame(cursor.fetchall(), columns=['Dni', 'Nom', 'Cognom', 'CodiHorari'])
     ct.close()
-    profes.fillna('?', inplace=True)
+
+    profes['Nom'] = profes['Nom'] + " " + profes['Cognom']
+    profes.drop(columns=['Cognom'], inplace=True)
+
     return profes
 
 
@@ -36,31 +42,32 @@ def df_horari_profe(codi, dia):
         cursor.execute(query)
         horari = pd.DataFrame(cursor.fetchall(), columns=['Hora', 'Assignatura', 'Aula', 'Grup'])
     ct.close()
-    horari.fillna('?', inplace=True)
+
     return horari
 
 
 def df_profes_guardia(dia, hora):
-    """DataFrame amb el nom i el cognom dels professors amb G o Gp al dia i hora indicats"""
+    """DataFrame amb el nom dels professors amb G o Gp al dia i hora indicats"""
     ct = connexio()
     query = ("SELECT CodiHorari FROM Horari WHERE Dia= " + str(dia) + " AND Hora = " + str(hora) + " AND (Assignatura = 'G' OR Assignatura = 'Gp')")
     with ct.cursor() as cursor:
         cursor.execute(query)
         profes_g = pd.DataFrame(cursor.fetchall(), columns=['CodiHorari'])
     ct.close()
-    profes = df_profes()
+    profes = df_professors()
+
     profes_g = profes_g.merge(profes, how='left', on='CodiHorari')
     profes_g.fillna('?', inplace=True)
 
-    return profes_g[['Nom', 'Cognom']]
+    return profes_g[['Nom']]
 
 
 def df_profes_absents():
     # DataFrame amb les dades dels professors absents
-    # Dni, Nom, Cognom, CodiHorari
+    # Dni, Nom, CodiHorari
 
     absents = pd.DataFrame({'Dni': llista_dni_absents()})
-    profes = df_profes()
+    profes = df_professors()
     profes_absents = absents.merge(profes, on='Dni', how='left')
 
     return profes_absents
@@ -170,13 +177,12 @@ def dni_titular_per_substitut(horari):
 
 
 def tots():
-    profes = df_profes()
+    profes = df_professors()
     text = "No hi ha professors"
     if len(profes.index) > 0:
         text = "Llistat de tot el professorat:\n\n"
         for i in profes.index:
-            text += profes.loc[i, 'Nom'] + " " + profes.loc[i, 'Cognom'] + " (" + str(
-                profes.loc[i, 'CodiHorari']) + ")\n"
+            text += profes.loc[i, 'Nom'] + " (" + str(profes.loc[i, 'CodiHorari']) + ")\n"
     return text
 
 
@@ -186,8 +192,7 @@ def substituts():
     if len(profes.index) > 0:
         text = "Professorat substitut:\n\n"
         for i in profes.index:
-            text += profes.loc[i, 'Nom'] + " " + profes.loc[i, 'Cognom'] + " (" + str(
-                profes.loc[i, 'CodiHorari']) + ")\n"
+            text += profes.loc[i, 'Nom'] + " (" + str(profes.loc[i, 'CodiHorari']) + ")\n"
     return text
 
 
@@ -196,11 +201,11 @@ def presents():
     text = "No hi ha ningú"
     if len(dni) > 0:
         presents = pd.DataFrame({'Dni': dni})
-        profes = df_profes()
+        profes = df_professors()
         profes_presents = presents.merge(profes, on='Dni', how='left')
         text = "Professors al centre:\n\n"
         for i in profes_presents.index:
-            text += profes_presents.loc[i, 'Nom'] + " " + profes_presents.loc[i, 'Cognom'] + "\n"
+            text += profes_presents.loc[i, 'Nom'] + "\n"
     return text
 
 
@@ -209,7 +214,7 @@ def absents():
     if len(absents.index) > 0:
         text = "Professors fora del centre:\n\n"
         for i in absents.index:
-            text += absents.loc[i, 'Nom'] + " " + absents.loc[i, 'Cognom'] + "\n"
+            text += absents.loc[i, 'Nom'] + "\n"
     else:
         text = "No falta ningú"
     return text
@@ -225,7 +230,7 @@ def guardia():
         profes = df_profes_guardia(dia, hora_lectiva)
         text = "Professors de guàrdia a les " + HORA[hora_lectiva - 1] + ":\n"
         for i in profes.index:
-            text += profes.loc[i, "Nom"] + " " + profes.loc[i, "Cognom"] + "\n"
+            text += profes.loc[i, "Nom"] + "\n"
     return text
 
 

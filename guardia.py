@@ -30,9 +30,10 @@ def llista(dia, hora):
         if len(guardia) > 0:
             text = "Professors a substituir a les " + HORA[hora - 1] + ":\n\n"
             for i in guardia.index:
-                text += guardia.loc[i, 'Nom'] + " " + guardia.loc[i, 'Cognom'] + ": " \
-                        + guardia.loc[i, 'Assignatura'] + " " + guardia.loc[i, 'Aula'] \
-                        + " " + guardia.loc[i, 'Grup'] + "\n"
+                text += guardia.loc[i, 'Nom'] + ": " \
+                        + guardia.loc[i, 'Assignatura'] + " "\
+                        + guardia.loc[i, 'Aula'] + " "\
+                        + guardia.loc[i, 'Grup'] + "\n"
         else:
             text = "Tot correcte!"
 

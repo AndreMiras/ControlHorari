@@ -2,6 +2,7 @@ import pandas as pd
 from datetime import datetime
 
 from dades import connexio
+from professors import df_professors
 
 HORA_INICI = {1:'8:10:00', 2:'9:05:00', 3:'10:00:00', 4:'10:55:00', 5:'11:25:00', 6:'11:55:00', 7:'12:50:00', 8:'13:45:00'}
 HORA_FINAL = {1:'9:05:00', 2:'10:00:00', 3:'10:55:00', 4:'11:25:00', 5:'11:55:00', 6:'12:50:00', 7:'13:45:00', 8:'14:40:00'}
@@ -80,21 +81,6 @@ def df_registres(inici, final):
     return registres
 
 
-def df_professors():
-    """DataFrame amb les dades dels professors actius"""
-    ct = connexio()
-    query = ("SELECT Dni,Nom,Cognom,CodiHorari FROM Professor WHERE Actiu=1;")
-    with ct.cursor() as cursor:
-        cursor.execute(query)
-        profes = pd.DataFrame(cursor.fetchall(), columns=['Dni', 'Nom', 'Cognom', 'CodiHorari'])
-    ct.close()
-
-    profes['Nom'] = profes['Nom'] + " " + profes['Cognom']
-    profes = profes[['Dni','Nom','CodiHorari']]
-
-    return profes
-
-
 def format_hora(hms):
     string_hora = "{:02}:{:02}".format(hms.seconds // 3600, hms.seconds // 60 % 60)
     if string_hora=="nan:nan":
@@ -115,9 +101,8 @@ def calcul_temps_absencia(row):
 
 
 def informe_absencies_dia(inici, final):
-    """
-    Informe del temps d'absència d'un professor segons el seu horari
-    """
+
+    # Informe del temps d'absència d'un professor segons el seu horari
 
     dates = df_dates(inici, final)
     horari = df_horari()
