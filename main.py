@@ -1,13 +1,12 @@
 import random
-import re
+from os import path
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler, Filters, ConversationHandler
-from barcode import EAN13
-from barcode.writer import ImageWriter
 
 import registre
 import professors
 import guardia
+import substitut
 from dades import *
 from utils import *
 from informes import *
@@ -166,35 +165,6 @@ dispatcher.add_handler(CommandHandler('horari', horari))
 SUBSTITUT = ['Nom', 'Cognom', 'Dni', 'Horari']
 
 
-def afegir_substitut(update, context, Nom, Cognom, Dni, CodiHorari):
-    # Codi barres
-    nif = int(re.findall('\d+', Dni)[0])
-    random.seed(nif)
-    CodiBarres = str(random.randint(100000000000, 999999999999))
-    my_code = EAN13(CodiBarres, writer=ImageWriter())
-    my_code.save(Nom+Cognom)
-    pic = Nom + Cognom + ".png"
-    context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(pic, 'rb'))
-
-    # Canviar estat titular
-    ct = connexio()
-    update = "UPDATE Professor SET Actiu = 0 WHERE CodiHorari = " + CodiHorari + ";"
-    with ct.cursor() as cursor:
-        cursor.execute(update)
-        ct.commit()
-
-    # Afegir substitut BD
-    insert = "INSERT INTO Professor (Dni, Nom, Cognom, CodiHorari, CodiBarres, Actiu) " \
-             "VALUES ('" + Dni + "', '" + Nom + "', '" + Cognom + "', " + CodiHorari + ", " \
-             + CodiBarres + ", 1);"
-    with ct.cursor() as cursor:
-        cursor.execute(insert)
-        ct.commit()
-    ct.close()
-
-    return Nom + " " + Cognom + " afegit correctament"
-
-
 def afegir(update, context):
 
     autoritzat = update.message.chat.username in GESTIO+ADMIN
@@ -208,27 +178,34 @@ def afegir(update, context):
 
 def nom(update, context):
     SUBSTITUT[0] = update.message.text
-    update.message.reply_text("Cognom del substitut?")
+    update.message.reply_text("Cognom del substitut?\n/cancel per cancel·lar l'operació")
     return COGNOM
 
 
 def cognom(update, context):
     SUBSTITUT[1] = update.message.text
-    update.message.reply_text("DNI del substitut?")
+    update.message.reply_text("DNI del substitut?\n/cancel per cancel·lar l'operació")
     return DNI
 
 
 def dni(update, context):
     SUBSTITUT[2] = update.message.text
     tots(update, context)
-    update.message.reply_text("Codi de l'horari a substituir?")
+    update.message.reply_text("Codi de l'horari a substituir?\n/cancel per cancel·lar l'operació")
     return HORARI
 
 
 def horari(update, context):
-    SUBSTITUT[3] = update.message.text
-    text = afegir_substitut(update, context, SUBSTITUT[0], SUBSTITUT[1], SUBSTITUT[2], SUBSTITUT[3])
+    SUBSTITUT[3] = int(update.message.text)
+
+    # Missatge confirmació
+    text = substitut.afegir(SUBSTITUT[0], SUBSTITUT[1], SUBSTITUT[2], SUBSTITUT[3])
     update.message.reply_text(text)
+
+    # Imatge codi de barres
+    nom_fitxer = SUBSTITUT[2] + ".png"
+    if path.isfile(nom_fitxer):
+        context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(nom_fitxer, 'rb'))
     return ConversationHandler.END
 
 
@@ -247,9 +224,11 @@ NOM, COGNOM, DNI, HORARI = range(4)
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('afegir', afegir)],
                                            states={
                                                 NOM: [MessageHandler(Filters.regex("/cancel"), cancel),
-                                                        MessageHandler(Filters.regex("[A-z]*"), nom),],
+                                                        MessageHandler(Filters.regex("[A-z]*"), nom),
+                                                      MessageHandler(Filters.regex(".*"), incorrecte)],
                                                 COGNOM: [MessageHandler(Filters.regex("/cancel"), cancel),
-                                                        MessageHandler(Filters.regex("[A-z]*"), cognom)],
+                                                        MessageHandler(Filters.regex("[A-z]*"), cognom),
+                                                         MessageHandler(Filters.regex(".*"), incorrecte)],
                                                 DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), dni),
                                                         MessageHandler(Filters.regex("/cancel"), cancel),
                                                         MessageHandler(Filters.regex(".*"), incorrecte)],

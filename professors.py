@@ -87,6 +87,18 @@ def llista_dni_presents():
     return llista_presents_actius
 
 
+def llista_codis_horari():
+    codis = []
+    ct = connexio()
+    query = ("SELECT CodiHorari FROM Professor WHERE Actiu=1;")
+    with ct.cursor() as cursor:
+        cursor.execute(query)
+        for row in cursor.fetchall():
+            codis.append(row[0])
+    ct.close()
+    return codis
+
+
 def llista_dni_absents():
     """Llista de DNIs dels professors fora del centre"""
     dni = llista_dni_actius()
