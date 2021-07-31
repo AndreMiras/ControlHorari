@@ -293,15 +293,15 @@ dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('finalit
 
 # ---------- INFORMES ----------
 
-DADES_INFORME = ['tipus', 'inici', 'final']
+DADES_INFORME = [0, 'inici', 'final']
 
 
 def informe(update, context):
-    autoritzat = update.message.chat.username in GESTIO
+    autoritzat = update.message.chat.username in GESTIO+ADMIN
     if autoritzat:
         text = "Tipus d'informe:\n"
-        text += "/informe_assistencia - Temps treballat per dia\n"
-        text += "/informe_absencies - Absències per dia\n"
+        text += "1. Assistència: temps treballat per dia\n"
+        text += "2. Absències: temps d'absència per dia\n"
         text += "/cancel per aturar"
         update.message.reply_text(text)
         return TIPUS
@@ -311,33 +311,43 @@ def informe(update, context):
 
 
 def informe_tipus(update, context):
-    DADES_INFORME[0] = update.message.text
-    update.message.reply_text("Introdueix la data d'inici: AAAA-MM-DD")
+    DADES_INFORME[0] = int(update.message.text)
+    text = "Introdueix la data d'inici: AAAA-MM-DD"
+    text += "/cancel per aturar"
+    update.message.reply_text(text)
     return INICI
 
 
 def informe_inici(update, context):
     DADES_INFORME[1] = update.message.text
-    update.message.reply_text("Introdueix la data final: AAAA-MM-DD")
+    text = "Introdueix la data final: AAAA-MM-DD"
+    text += "/cancel per aturar"
+    update.message.reply_text(text)
     return FINAL
 
 
 def informe_final(update, context):
     DADES_INFORME[2] = update.message.text
 
-    if DADES_INFORME[0] == "/informe_assistencia":
-        filename = informe_ES_dia(DADES_INFORME[1], DADES_INFORME[2])
-    elif DADES_INFORME[0] == "/informe_absencies":
-        filename = informe_absencies_dia(DADES_INFORME[1], DADES_INFORME[2])
+    text = "Informe d'assistència" if DADES_INFORME[0] == 1 else "Informe d'absències"
+    text += "Inici: " + DADES_INFORME[1]
+    text += "Final: " + DADES_INFORME[2]
+
+    if DADES_INFORME[0] == 1:
+        filename = informe_assistencia(DADES_INFORME[1], DADES_INFORME[2])
     else:
-        update.message.reply_text("Valor incorrecte")
-        return ConversationHandler.END
+        filename = informe_absencies(DADES_INFORME[1], DADES_INFORME[2])
 
     context.bot.send_document(chat_id=update.effective_chat.id, document=open(filename, 'rb'))
     return ConversationHandler.END
 
 
-def valor_incorrecte(update, context):
+def informe_cancel(update, context):
+    update.message.reply_text("Operació cancel·lada")
+    return ConversationHandler.END
+
+
+def informe_incorrecte(update, context):
     update.message.reply_text("Valor incorrecte")
     return ConversationHandler.END
 
@@ -346,15 +356,15 @@ TIPUS, INICI, FINAL = range(3)
 
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('informe', informe)],
                                            states={
-                                                TIPUS: [MessageHandler(Filters.regex("/cancel"), afegir_cancel),
-                                                        MessageHandler(Filters.regex("/.*"), informe_tipus),
-                                                        MessageHandler(Filters.regex(".*"), valor_incorrecte)],
+                                                TIPUS: [MessageHandler(Filters.regex("[1|2]"), informe_tipus),
+                                                        MessageHandler(Filters.regex("/cancel"), informe_cancel),
+                                                        MessageHandler(Filters.regex(".*"), informe_incorrecte)],
                                                 INICI: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_inici),
-                                                        MessageHandler(Filters.regex("/cancel"), afegir_cancel),
-                                                        MessageHandler(Filters.regex(".*"), valor_incorrecte)],
+                                                        MessageHandler(Filters.regex("/cancel"), informe_cancel),
+                                                        MessageHandler(Filters.regex(".*"), informe_incorrecte)],
                                                 FINAL: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_final),
-                                                        MessageHandler(Filters.regex("/cancel"), afegir_cancel),
-                                                        MessageHandler(Filters.regex(".*"), valor_incorrecte)],
+                                                        MessageHandler(Filters.regex("/cancel"), informe_cancel),
+                                                        MessageHandler(Filters.regex(".*"), informe_incorrecte)],
                                            },
                                            fallbacks=[CommandHandler('cancel', afegir_cancel)]
                                            ))

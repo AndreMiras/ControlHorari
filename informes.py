@@ -97,12 +97,14 @@ def calcul_temps_absencia(row):
         temps_feina = row['HoraSortida'] - row['HoraEntrada']
         temps_treballat = sortida - entrada
         temps_absencia = temps_feina - temps_treballat
+
     return temps_absencia
 
 
-def informe_absencies_dia(inici, final):
+def informe_absencies(inici, final):
 
     # Informe del temps d'absència d'un professor segons el seu horari
+    # Data, Nom, Temps absència
 
     dates = df_dates(inici, final)
     horari = df_horari()
@@ -125,11 +127,10 @@ def informe_absencies_dia(inici, final):
     return filename
 
 
-def informe_ES_dia(inici, final):
-    """
-    Informe d'assistència del professorat:
-    Data, Nom, RegistreEntrada, RegistreSortida, TempsTreballat
-    """
+def informe_assistencia(inici, final):
+
+    # Informe d'assistència del professorat:
+    # Data, Nom, RegistreEntrada, RegistreSortida, TempsTreballat
 
     dates = df_dates(inici, final)
     registres = df_registres(inici, final)
@@ -149,44 +150,6 @@ def informe_ES_dia(inici, final):
     informe.dropna(inplace=True)
     informe = informe[['Data','Nom','RegistreEntrada','RegistreSortida','TempsTreballat']]
     filename = "informe_assistencia_" + inici + "_" + final +".csv"
-    informe.to_csv(filename, index=False)
-
-    return filename
-
-
-def informe_dates(inici, final):
-
-    # Interval de dates i horaris
-    dates = df_dates(inici, final)
-    horari = df_horari()
-
-    informe = dates.merge(horari, on=['DiaSetmana'], how = 'left')
-    informe['HoresFeina'] = informe['HoraSortida'] - informe['HoraEntrada']
-
-    informe['HoraEntrada'] = informe['HoraEntrada'].apply(format_hora)
-    informe['HoraSortida'] = informe['HoraSortida'].apply(format_hora)
-    informe['HoresFeina'] = informe['HoresFeina'].apply(format_hora)
-
-    # Registre entrades
-    registres = df_registres(inici, final)
-    informe = informe.merge(registres, on=["CodiHorari", 'Data'], how='left')
-
-    informe['HoresTreballades'] = informe['RegistreSortida'] - informe['RegistreEntrada']
-
-    informe['RegistreEntrada'] = informe['RegistreEntrada'].apply(format_hora)
-    informe['RegistreSortida'] = informe['RegistreSortida'].apply(format_hora)
-    informe['HoresTreballades'] = informe['HoresTreballades'].apply(format_hora)
-
-    # Dades professors
-    profes = df_professors()
-    informe = informe.merge(profes[['Nom','CodiHorari']], on=['CodiHorari'], how='left')
-    informe = informe.rename(columns={'Nom':'NomHorari'})
-
-    informe = informe.merge(profes[['Nom', 'Dni']], on=['Dni'], how='left')
-
-    # Format informe
-    informe = informe[['Data','NomHorari','HoraEntrada','HoraSortida','HoresFeina','Nom','RegistreEntrada','RegistreSortida','HoresTreballades']]
-    filename = "informe_" + inici + "_" + final +".csv"
     informe.to_csv(filename, index=False)
 
     return filename

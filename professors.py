@@ -15,6 +15,7 @@ def df_professors():
 
     profes['Nom'] = profes['Nom'] + " " + profes['Cognom']
     profes.drop(columns=['Cognom'], inplace=True)
+    profes.fillna('?', inplace=True)
 
     return profes
 
@@ -30,6 +31,7 @@ def df_substituts():
 
     profes['Nom'] = profes['Nom'] + " " + profes['Cognom']
     profes.drop(columns=['Cognom'], inplace=True)
+    profes.fillna('?', inplace=True)
 
     return profes
 
@@ -69,6 +71,7 @@ def df_profes_absents():
     absents = pd.DataFrame({'Dni': llista_dni_absents()})
     profes = df_professors()
     profes_absents = absents.merge(profes, on='Dni', how='left')
+    profes.fillna('?', inplace=True)
 
     return profes_absents
 
