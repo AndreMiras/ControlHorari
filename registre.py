@@ -15,7 +15,7 @@ def professor_per_codi_barres(codi):
 
 
 def professor_per_dni(dni):
-    # Cercar dades professor per codi DNI
+    # Cerca les dades del professor a partir del final del dni
     ct = connexio()
     query = ("SELECT Nom,CodiHorari,DNI FROM Professor WHERE SUBSTRING(DNI, LENGTH(DNI)-3, 4) = '" + dni + "';")
     with ct.cursor() as cursor:

@@ -149,11 +149,12 @@ def horari(update, context):
         text = "Indica /horari i el codi del professor\nPer exemple: /horari 9"
 
     elif context.args[0].isnumeric():
-        codiHorari = int(context.args[0])
-        text = professors.horari(codiHorari)
+        codi_horari = int(context.args[0])
+        text = professors.horari(codi_horari)
 
     else:
         text="Codi incorrecte"
+
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
@@ -375,13 +376,13 @@ def registre_final_dni(update, context):
     text = "No estàs autoritzat a realitzar aquesta acció"
 
     if autoritzat:
-        codiDNI = update.message.text.upper()
-        dades_prof = registre.professor_per_dni(codiDNI)
+        final_dni = update.message.text.upper()
+        dades_prof = registre.professor_per_dni(final_dni)
 
-        if len(dades_prof) == 0:
-            text = "Codi incorrecte"
-        else:
+        if len(dades_prof) > 0:
             text = registre.registre_BD(dades_prof)
+        else:
+            text = "Codi incorrecte"
 
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
@@ -396,10 +397,10 @@ def registre_codi_barres(update, context):
     if autoritzat:
         dades_prof = registre.professor_per_codi_barres(update.message.text)
 
-        if len(dades_prof)==0:
-            text = "Aquest codi de barres no està associat a cap professor"
-        else:
+        if len(dades_prof)>0:
             text = registre.registre_BD(dades_prof)
+        else:
+            text = "Aquest codi de barres no està associat a cap professor"
 
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
