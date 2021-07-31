@@ -3,7 +3,7 @@ import datetime
 from dades import connexio
 
 
-def cercaCB(codi):
+def professor_per_codi_barres(codi):
     # Cercar dades professor per codi de barres
     ct = connexio()
     query = ("SELECT Nom,CodiHorari,DNI FROM Professor WHERE CodiBarres = '" + codi[:12] + "';")
@@ -14,7 +14,7 @@ def cercaCB(codi):
     return dades_prof
 
 
-def cercaDNI(dni):
+def professor_per_dni(dni):
     # Cercar dades professor per codi DNI
     ct = connexio()
     query = ("SELECT Nom,CodiHorari,DNI FROM Professor WHERE SUBSTRING(DNI, LENGTH(DNI)-3, 4) = '" + dni + "';")
@@ -43,7 +43,7 @@ def missatge_sortida(nom, hora):
     return text
 
 
-def registreBD(dades_prof):
+def registre_BD(dades_prof):
 
     for row in dades_prof:
         Nom = row[0]
@@ -77,4 +77,6 @@ def registreBD(dades_prof):
 
     ct.close()
 
-    return missatge_entrada(Nom, current_time) if es_entrada else missatge_sortida(Nom, current_time)
+    missatge =  missatge_entrada(Nom, current_time) if es_entrada else missatge_sortida(Nom, current_time)
+
+    return missatge

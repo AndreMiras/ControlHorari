@@ -376,12 +376,12 @@ def registre_final_dni(update, context):
 
     if autoritzat:
         codiDNI = update.message.text.upper()
-        dades_prof = registre.cercaDNI(codiDNI)
+        dades_prof = registre.professor_per_dni(codiDNI)
 
         if len(dades_prof) == 0:
             text = "Codi incorrecte"
         else:
-            text = registre.registreBD(dades_prof)
+            text = registre.registre_BD(dades_prof)
 
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
@@ -394,12 +394,12 @@ def registre_codi_barres(update, context):
     text = "No estàs autoritzat a realitzar aquesta acció"
 
     if autoritzat:
-        dades_prof = registre.cercaCB(update.message.text)
+        dades_prof = registre.professor_per_codi_barres(update.message.text)
 
         if len(dades_prof)==0:
             text = "Aquest codi de barres no està associat a cap professor"
         else:
-            text = registre.registreBD(dades_prof)
+            text = registre.registre_BD(dades_prof)
 
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
