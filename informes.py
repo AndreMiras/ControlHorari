@@ -102,7 +102,7 @@ def calcul_temps_absencia(row):
     return temps_absencia
 
 
-def informe_absencies(inici, final):
+def absencies(inici, final):
 
     # Informe del temps d'absència d'un professor segons el seu horari
     # Data, Nom, Temps absència
@@ -131,14 +131,14 @@ def informe_absencies(inici, final):
     return filename
 
 
-def informe_assistencia(inici, final):
+def assistencia(inici, final):
 
     # Informe d'assistència del professorat:
     # Data, Nom, RegistreEntrada, RegistreSortida, TempsTreballat
 
     dates = df_dates(inici, final)
     registres = df_registres(inici, final)
-    informe = dates.merge(registres, on=['Data'], how='left')
+    informe = dates.merge(registres, on=['Data'], how='inner')
 
     informe['TempsTreballat'] = informe['RegistreSortida'] - informe['RegistreEntrada']
 
@@ -151,7 +151,6 @@ def informe_assistencia(inici, final):
     informe = informe.merge(profes[['Nom','Dni']], on=['Dni'], how='left')
 
     # Format informe
-    informe.dropna(inplace=True)
     informe = informe[['Data','Nom','RegistreEntrada','RegistreSortida','TempsTreballat']]
 
     # Generar fitxer

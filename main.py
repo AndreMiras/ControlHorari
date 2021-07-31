@@ -335,10 +335,6 @@ def informe_inici(update, context):
 def informe_final(update, context):
     DADES_INFORME[2] = update.message.text
 
-    text = "Inici: " + DADES_INFORME[1] + "\n"
-    text += "Final: " + DADES_INFORME[2]
-    context.bot.send_message(chat_id=update.message.chat_id, text=text)
-
     if DADES_INFORME[0] == 1:
         filename = informes.assistencia(DADES_INFORME[1], DADES_INFORME[2])
     else:

@@ -1,5 +1,5 @@
 import random
-import datetime
+from datetime import datetime
 from dades import connexio
 
 
