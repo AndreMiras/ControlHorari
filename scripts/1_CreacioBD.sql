@@ -3,15 +3,16 @@ USE Corbera21;
 
 CREATE TABLE `Corbera21`.`Professor` (
   `idProfessor` INT NOT NULL AUTO_INCREMENT,
-  `DNI` VARCHAR(10) NOT NULL,
+  `Dni` VARCHAR(10) NOT NULL,
   `Nom` VARCHAR(45) NOT NULL,
   `Cognom` VARCHAR(45) NOT NULL,
   `CodiHorari` INT NOT NULL,
   `CodiBarres` VARCHAR(12) NOT NULL,
   `Departament` VARCHAR(45) NULL,
   `Actiu` INT NOT NULL,
+  `Substitut` VARCHAR(10) NOT NULL,
   PRIMARY KEY (`idProfessor`),
-  UNIQUE INDEX `DNI_UNIQUE` (`DNI` ASC),
+  UNIQUE INDEX `DNI_UNIQUE` (`Dni` ASC),
   UNIQUE INDEX `CodiBarres_UNIQUE` (`CodiBarres` ASC));
 
 CREATE TABLE `Corbera21`.`Horari` (
@@ -26,7 +27,7 @@ CREATE TABLE `Corbera21`.`Horari` (
 
 CREATE TABLE `Corbera21`.`Registre` (
   `idRegistre` INT NOT NULL AUTO_INCREMENT,
-  `DNI` VARCHAR(10) NOT NULL,
+  `Dni` VARCHAR(10) NOT NULL,
   `CodiHorari` INT NOT NULL,
   `Data` DATE NOT NULL,
   `HoraEntrada` TIME NOT NULL,

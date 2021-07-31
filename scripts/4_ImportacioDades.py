@@ -21,9 +21,9 @@ for i in profes.index:
     CodiBarres = str(profes.loc[i,'CodiBarres'])
     Departament = profes.loc[i,'Departament']
 
-    insert = "INSERT INTO Professor (Dni, Nom, Cognom, CodiHorari, CodiBarres, Departament, Actiu) " \
+    insert = "INSERT INTO Professor (Dni, Nom, Cognom, CodiHorari, CodiBarres, Departament, Actiu, Substitut) " \
              "VALUES ('" + Dni + "', '" + Nom + "', '" + Cognom + "', " + CodiHorari + ", " \
-             + CodiBarres + ", '" + Departament + "', 1);"
+             + CodiBarres + ", '" + Departament + "', 1, 'no');"
 
     with connection.cursor() as cursor:
         cursor.execute(insert)

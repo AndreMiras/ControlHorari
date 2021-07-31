@@ -52,7 +52,7 @@ dispatcher.add_handler(CommandHandler('autor', autor))
 
 def menu(update, context):
     text = "/guardia - professors a substituir\n"
-    text += "/professors - llistat de professors\n"
+    text += "/professors - llistats de professorat\n"
     text += "/gestio - informes i substitucions"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
@@ -67,13 +67,13 @@ def menu_professors(update, context):
 
 
 def menu_gestio(update, context):
-    text = "/substitut - afegir o finalitzar una substitució\n"
-    text += "/informe - informes d'assistència"
+    text = "/substitucio - afegir o finalitzar una substitució\n"
+    text += "/informe - informes d'assistència del professorat"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
 def menu_substitut(update, context):
-    text = "/afegir - afegir substitut\n"
+    text = "/afegir - afegir una substitució\n"
     text += "/finalitzar - finalitzar substitució\n"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
@@ -82,7 +82,7 @@ dispatcher.add_handler(CommandHandler('menu', menu))
 dispatcher.add_handler(MessageHandler(Filters.regex('[Mm]en[uú]'), menu))
 dispatcher.add_handler(CommandHandler('professors', menu_professors))
 dispatcher.add_handler(CommandHandler('gestio', menu_gestio))
-dispatcher.add_handler(CommandHandler('substitut', menu_substitut))
+dispatcher.add_handler(CommandHandler('substitucio', menu_substitut))
 
 
 # ---------- GUÀRDIA ----------
@@ -120,6 +120,11 @@ dispatcher.add_handler(MessageHandler(Filters.regex('[Gg]u[aà]rdia'), guardia_m
 
 def tots(update, context):
     text = professors.tots()
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
+def substituts(update, context):
+    text = professors.substituts()
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
@@ -203,7 +208,7 @@ def afegir_horari(update, context):
     update.message.reply_text(text)
 
     # Imatge codi de barres
-    nom_fitxer = SUBSTITUT[2] + ".png"
+    nom_fitxer = "./codes/" + SUBSTITUT[2] + ".png"
     if path.isfile(nom_fitxer):
         context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(nom_fitxer, 'rb'))
     return ConversationHandler.END
@@ -243,9 +248,6 @@ dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('afegir'
 # ---------- FINALITZAR SUBSTITUCIÓ -------------
 
 
-FI_SUBSTITUT = ['DNI', 'Horari']
-
-
 def finalitzar(update, context):
 
     autoritzat = update.message.chat.username in GESTIO+ADMIN
@@ -254,22 +256,16 @@ def finalitzar(update, context):
         update.message.reply_text("No estàs autoritzat a realitzar aquesta acció")
         return ConversationHandler.END
     else:
-        update.message.reply_text("DNI del professor que es reincorpora?\n/cancel per cancel·lar l'operació")
-        return F_DNI
-
-
-def finalitzar_dni(update, context):
-    FI_SUBSTITUT[0] = update.message.text
-    tots(update, context)
-    update.message.reply_text("Codi de l'horari del substitut?\n/cancel per cancel·lar l'operació")
-    return F_HORARI
+        substituts(update, context)
+        update.message.reply_text("Codi de l'horari del substitut?\n/cancel per cancel·lar l'operació")
+        return F_HORARI
 
 
 def finalitzar_horari(update, context):
-    FI_SUBSTITUT[1] = int(update.message.text)
-    text = substitucions.finalitzar(FI_SUBSTITUT[0], FI_SUBSTITUT[1])
+    horari = int(update.message.text)
+    text = substitucions.finalitzar(horari)
     update.message.reply_text(text)
-    ConversationHandler.END
+    return ConversationHandler.END
 
 
 def finalitzar_cancel(update, context):
@@ -278,17 +274,14 @@ def finalitzar_cancel(update, context):
 
 
 def finalitzar_incorrecte(update, context):
-    update.message.reply_text("Valor incorrecte")
+    update.message.reply_text("Codi horari incorrecte")
     return ConversationHandler.END
 
 
-F_DNI, F_HORARI = range(2)
+F_HORARI = 0
 
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('finalitzar', finalitzar)],
                                            states={
-                                                F_DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), finalitzar_dni),
-                                                        MessageHandler(Filters.regex("/cancel"), finalitzar_cancel),
-                                                        MessageHandler(Filters.regex(".*"), finalitzar_incorrecte)],
                                                 F_HORARI: [MessageHandler(Filters.regex("[0-9]+"), finalitzar_horari),
                                                            MessageHandler(Filters.regex("/cancel"), finalitzar_cancel),
                                                            MessageHandler(Filters.regex(".*"), finalitzar_incorrecte)],
@@ -369,12 +362,12 @@ dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('informe
 # ---------- REGISTRE ----------
 
 
-def registreDNI(update, context):
+def registre_dni(update, context):
     text = "introdueix només les tres últimes xifres i la lletra del DNI o NIE"
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
-def registreCodiDNI(update, context):
+def registre_final_dni(update, context):
 
     # Usuaris autoritzats
     autoritzat = update.message.chat.username in REGISTRE+ADMIN
@@ -393,7 +386,7 @@ def registreCodiDNI(update, context):
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
-def registreCB(update, context):
+def registre_codi_barres(update, context):
 
     # Usuaris autoritzats
     autoritzat = update.message.chat.username in REGISTRE+ADMIN
@@ -411,9 +404,9 @@ def registreCB(update, context):
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
-dispatcher.add_handler(MessageHandler(Filters.regex('[A-z]?[0-9]{7,8}[A-z]'), registreDNI))
-dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{3}[A-z]'), registreCodiDNI))
-dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{13}'), registreCB))
+dispatcher.add_handler(MessageHandler(Filters.regex('[A-z]?[0-9]{7,8}[A-z]'), registre_dni))
+dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{3}[A-z]'), registre_final_dni))
+dispatcher.add_handler(MessageHandler(Filters.regex('[0-9]{13}'), registre_codi_barres))
 
 
 # ---------- ALTRES ----------

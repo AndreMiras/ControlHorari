@@ -16,6 +16,18 @@ def df_profes():
     return profes
 
 
+def df_substituts():
+    """DataFrame amb les dades dels professors actius"""
+    ct = connexio()
+    query = ("SELECT Dni,Nom,Cognom,CodiHorari FROM Professor WHERE Actiu=1 AND Substitut<>'NO' ORDER BY 4;")
+    with ct.cursor() as cursor:
+        cursor.execute(query)
+        profes = pd.DataFrame(cursor.fetchall(), columns=['Dni', 'Nom', 'Cognom', 'CodiHorari'])
+    ct.close()
+    profes.fillna('?', inplace=True)
+    return profes
+
+
 def df_horari_profe(codi, dia):
     """DataFrame amb l'horari d'un professor per codi i dia"""
     ct = connexio()
@@ -96,7 +108,8 @@ def llista_dni_absents():
     return dni
 
 
-def llista_codis_horari():
+def llista_horaris():
+    # Llistat de tots els codis horaris actius
     codis = []
     ct = connexio()
     query = ("SELECT CodiHorari FROM Professor WHERE Actiu=1;")
@@ -108,13 +121,52 @@ def llista_codis_horari():
     return codis
 
 
-def es_codi_horari_actiu(codi):
+def es_horari_actiu(codi):
     # Comprova que el codi horari del professor és correcte
-    codis = llista_codis_horari()
+    codis = llista_horaris()
     if codi in codis:
         return True
     else:
         return False
+
+
+def dni_per_horari(horari):
+    # Retorna el dni a partir del codi horari actiu
+    # Si el codi és incorrecte retorna 'no'
+    dni = 'no'
+
+    if es_horari_actiu(horari):
+        ct = connexio()
+        query = "SELECT Dni FROM Professor WHERE CodiHorari = " + str(horari) + " AND ACTIU=1;"
+        with ct.cursor() as cursor:
+            cursor.execute(query)
+            result = cursor.fetchall()
+        ct.close()
+
+        if len(result)>0:
+            dni = result[0][0]
+
+    return dni
+
+
+def dni_titular_per_substitut(horari):
+    # Retorna el Dni del professor titular a partir del codi horari del substitut
+    # En cas d'error retorna 'no'
+
+    dni_titular = 'no'
+
+    if es_horari_actiu(horari):
+        ct = connexio()
+        query = "SELECT Substitut FROM Professor WHERE CodiHorari = " + str(horari) + " AND ACTIU=1;"
+        with ct.cursor() as cursor:
+            cursor.execute(query)
+            result = cursor.fetchall()
+        ct.close()
+
+        if len(result)>0:
+            dni_titular = result[0][0]
+
+    return dni_titular
 
 
 def tots():
@@ -122,6 +174,17 @@ def tots():
     text = "No hi ha professors"
     if len(profes.index) > 0:
         text = "Llistat de tot el professorat:\n\n"
+        for i in profes.index:
+            text += profes.loc[i, 'Nom'] + " " + profes.loc[i, 'Cognom'] + " (" + str(
+                profes.loc[i, 'CodiHorari']) + ")\n"
+    return text
+
+
+def substituts():
+    profes = df_substituts()
+    text = "No hi ha substituts"
+    if len(profes.index) > 0:
+        text = "Professorat substitut:\n\n"
         for i in profes.index:
             text += profes.loc[i, 'Nom'] + " " + profes.loc[i, 'Cognom'] + " (" + str(
                 profes.loc[i, 'CodiHorari']) + ")\n"
