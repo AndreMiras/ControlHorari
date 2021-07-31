@@ -15,7 +15,7 @@ def generar_codi_barres(dni):
 
     # Generem la imatge del codi de barres
     my_code = EAN13(codiBarres, writer=ImageWriter())
-    my_code.save("./codes/" + dni)
+    my_code.save("./codis/" + dni)
 
     return codiBarres
 

@@ -209,7 +209,7 @@ def afegir_horari(update, context):
     update.message.reply_text(text)
 
     # Imatge codi de barres
-    nom_fitxer = "./codes/" + SUBSTITUT[2] + ".png"
+    nom_fitxer = "./codis/" + SUBSTITUT[2] + ".png"
     if path.isfile(nom_fitxer):
         context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(nom_fitxer, 'rb'))
     return ConversationHandler.END
@@ -312,7 +312,10 @@ def informe(update, context):
 
 def informe_tipus(update, context):
     DADES_INFORME[0] = int(update.message.text)
-    text = "Introdueix la data d'inici: AAAA-MM-DD"
+    text = "Informe d'assistència" if DADES_INFORME[0] == 1 else "Informe d'absències"
+    context.bot.send_message(chat_id=update.message.chat_id, text=text)
+
+    text = "Introdueix la data d'inici: AAAA-MM-DD\n"
     text += "/cancel per aturar"
     update.message.reply_text(text)
     return INICI
@@ -320,7 +323,7 @@ def informe_tipus(update, context):
 
 def informe_inici(update, context):
     DADES_INFORME[1] = update.message.text
-    text = "Introdueix la data final: AAAA-MM-DD"
+    text = "Introdueix la data final: AAAA-MM-DD\n"
     text += "/cancel per aturar"
     update.message.reply_text(text)
     return FINAL
@@ -329,9 +332,9 @@ def informe_inici(update, context):
 def informe_final(update, context):
     DADES_INFORME[2] = update.message.text
 
-    text = "Informe d'assistència" if DADES_INFORME[0] == 1 else "Informe d'absències"
-    text += "Inici: " + DADES_INFORME[1]
+    text = "Inici: " + DADES_INFORME[1] + "\n"
     text += "Final: " + DADES_INFORME[2]
+    context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
     if DADES_INFORME[0] == 1:
         filename = informe_assistencia(DADES_INFORME[1], DADES_INFORME[2])

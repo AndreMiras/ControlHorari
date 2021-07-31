@@ -3,13 +3,12 @@ Importació de dades a la base de dades
 """
 
 import pandas as pd
-import mysql.connector
 import os
 from dades import connexio
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 profes = pd.read_csv(dir_path + '/../files/professors.csv', sep=",")
-connection = connexio()
+ct = connexio()
 
 # ----------- Professor -------------
 
@@ -25,9 +24,9 @@ for i in profes.index:
              "VALUES ('" + Dni + "', '" + Nom + "', '" + Cognom + "', " + CodiHorari + ", " \
              + CodiBarres + ", '" + Departament + "', 1, 'no');"
 
-    with connection.cursor() as cursor:
+    with ct.cursor() as cursor:
         cursor.execute(insert)
-        connection.commit()
+        ct.commit()
 
 
 # ---------- Horari -----------
@@ -49,9 +48,9 @@ for i in horari.index:
              "VALUES (" + Dia + ", " + Hora + ", '" + Assignatura + "', " \
              + CodiHorari + ", '" + Aula + "', '" + Grup + "');"
 
-    with connection.cursor() as cursor:
+    with ct.cursor() as cursor:
         cursor.execute(insert)
-        connection.commit()
+        ct.commit()
 
-connection.close()
+ct.close()
 

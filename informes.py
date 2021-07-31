@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 from datetime import datetime
 
 from dades import connexio
@@ -121,7 +122,10 @@ def informe_absencies(inici, final):
     informe['TempsAbsencia'] = informe['TempsAbsencia'].apply(format_hora)
     informe = informe[['Data', 'Nom', 'TempsAbsencia']]
 
-    filename = "informe_absencies_" + inici + "_" + final + ".csv"
+    # Generar fitxer
+    if not os.path.exists("./informes"):
+        os.makedirs("./informes")
+    filename = "./informes/informe_absencies_" + inici + "_" + final + ".csv"
     informe.to_csv(filename, index=False)
 
     return filename
@@ -149,7 +153,11 @@ def informe_assistencia(inici, final):
     # Format informe
     informe.dropna(inplace=True)
     informe = informe[['Data','Nom','RegistreEntrada','RegistreSortida','TempsTreballat']]
-    filename = "informe_assistencia_" + inici + "_" + final +".csv"
+
+    # Generar fitxer
+    if not os.path.exists("./informes"):
+        os.makedirs("./informes")
+    filename = "./informes/informe_assistencia_" + inici + "_" + final +".csv"
     informe.to_csv(filename, index=False)
 
     return filename
