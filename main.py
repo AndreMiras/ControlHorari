@@ -6,7 +6,7 @@ from telegram.ext import CommandHandler, MessageHandler, Filters, ConversationHa
 import registre
 import professors
 import guardia
-import substitut
+import substitucions
 from dades import *
 from utils import *
 from informes import *
@@ -176,30 +176,30 @@ def afegir(update, context):
         return NOM
 
 
-def nom(update, context):
+def afegir_nom(update, context):
     SUBSTITUT[0] = update.message.text
     update.message.reply_text("Cognom del substitut?\n/cancel per cancel·lar l'operació")
     return COGNOM
 
 
-def cognom(update, context):
+def afegir_cognom(update, context):
     SUBSTITUT[1] = update.message.text
     update.message.reply_text("DNI del substitut?\n/cancel per cancel·lar l'operació")
     return DNI
 
 
-def dni(update, context):
+def afegir_dni(update, context):
     SUBSTITUT[2] = update.message.text
     tots(update, context)
     update.message.reply_text("Codi de l'horari a substituir?\n/cancel per cancel·lar l'operació")
     return HORARI
 
 
-def horari(update, context):
+def afegir_horari(update, context):
     SUBSTITUT[3] = int(update.message.text)
 
     # Missatge confirmació
-    text = substitut.afegir(SUBSTITUT[0], SUBSTITUT[1], SUBSTITUT[2], SUBSTITUT[3])
+    text = substitucions.afegir(SUBSTITUT[0], SUBSTITUT[1], SUBSTITUT[2], SUBSTITUT[3])
     update.message.reply_text(text)
 
     # Imatge codi de barres
@@ -209,12 +209,12 @@ def horari(update, context):
     return ConversationHandler.END
 
 
-def cancel(update, context):
+def afegir_cancel(update, context):
     update.message.reply_text("Operació cancel·lada")
     return ConversationHandler.END
 
 
-def incorrecte(update, context):
+def afegir_incorrecte(update, context):
     update.message.reply_text("Valor incorrecte")
     return ConversationHandler.END
 
@@ -223,55 +223,27 @@ NOM, COGNOM, DNI, HORARI = range(4)
 
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('afegir', afegir)],
                                            states={
-                                                NOM: [MessageHandler(Filters.regex("/cancel"), cancel),
-                                                        MessageHandler(Filters.regex("[A-z]*"), nom),
-                                                      MessageHandler(Filters.regex(".*"), incorrecte)],
-                                                COGNOM: [MessageHandler(Filters.regex("/cancel"), cancel),
-                                                        MessageHandler(Filters.regex("[A-z]*"), cognom),
-                                                         MessageHandler(Filters.regex(".*"), incorrecte)],
-                                                DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), dni),
-                                                        MessageHandler(Filters.regex("/cancel"), cancel),
-                                                        MessageHandler(Filters.regex(".*"), incorrecte)],
-                                                HORARI: [MessageHandler(Filters.regex("[0-9]+"), horari),
-                                                        MessageHandler(Filters.regex("/cancel"), cancel),
-                                                        MessageHandler(Filters.regex(".*"), incorrecte)],
+                                                NOM: [MessageHandler(Filters.regex("/cancel"), afegir_cancel),
+                                                      MessageHandler(Filters.regex("[A-z]*"), afegir_nom),
+                                                      MessageHandler(Filters.regex(".*"), afegir_incorrecte)],
+                                                COGNOM: [MessageHandler(Filters.regex("/cancel"), afegir_cancel),
+                                                         MessageHandler(Filters.regex("[A-z]*"), afegir_cognom),
+                                                         MessageHandler(Filters.regex(".*"), afegir_incorrecte)],
+                                                DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), afegir_dni),
+                                                      MessageHandler(Filters.regex("/cancel"), afegir_cancel),
+                                                      MessageHandler(Filters.regex(".*"), afegir_incorrecte)],
+                                                HORARI: [MessageHandler(Filters.regex("[0-9]+"), afegir_horari),
+                                                         MessageHandler(Filters.regex("/cancel"), afegir_cancel),
+                                                         MessageHandler(Filters.regex(".*"), afegir_incorrecte)],
                                            },
-                                           fallbacks=[CommandHandler('cancel', cancel)]
+                                           fallbacks=[CommandHandler('cancel', afegir_cancel)]
                                            ))
 
 
 # ---------- FINALITZAR SUBSTITUCIÓ -------------
 
 
-FINALITZAR = ['DNI','Horari']
-
-
-def finalitzar_substitucio(update, context, Dni, CodiHorari):
-
-    # Eliminar substitut BD
-    ct = connexio()
-    delete = "DELETE FROM Professor WHERE Actiu = 1 AND CodiHorari = " + CodiHorari + ";"
-    with ct.cursor() as cursor:
-        cursor.execute(delete)
-        ct.commit()
-
-    # Canviar estat titular
-    query = "SELECT * FROM Professor WHERE Dni = '" + Dni + "';"
-    with ct.cursor() as cursor:
-        cursor.execute(query)
-        result = cursor.fetchall()
-
-    if len(result)==0:
-        text = "Dni incorrecte"
-    else:
-        update = "UPDATE Professor SET Actiu = 1 WHERE Dni = '" + Dni + "';"
-        with ct.cursor() as cursor:
-            cursor.execute(update)
-            ct.commit()
-        text = "Substitució finalitzada correctament"
-
-    ct.close()
-    return text
+FI_SUBSTITUT = ['DNI', 'Horari']
 
 
 def finalitzar(update, context):
@@ -287,17 +259,27 @@ def finalitzar(update, context):
 
 
 def finalitzar_dni(update, context):
-    FINALITZAR[0] = update.message.text
+    FI_SUBSTITUT[0] = update.message.text
     tots(update, context)
-    update.message.reply_text("Codi de l'horari del substitut?")
+    update.message.reply_text("Codi de l'horari del substitut?\n/cancel per cancel·lar l'operació")
     return F_HORARI
 
 
 def finalitzar_horari(update, context):
-    FINALITZAR[1] = update.message.text
-    text = finalitzar_substitucio(update, context, FINALITZAR[0], FINALITZAR[1])
+    FI_SUBSTITUT[1] = int(update.message.text)
+    text = substitucions.finalitzar(FI_SUBSTITUT[0], FI_SUBSTITUT[1])
     update.message.reply_text(text)
     ConversationHandler.END
+
+
+def finalitzar_cancel(update, context):
+    update.message.reply_text("Operació cancel·lada")
+    return ConversationHandler.END
+
+
+def finalitzar_incorrecte(update, context):
+    update.message.reply_text("Valor incorrecte")
+    return ConversationHandler.END
 
 
 F_DNI, F_HORARI = range(2)
@@ -305,13 +287,13 @@ F_DNI, F_HORARI = range(2)
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('finalitzar', finalitzar)],
                                            states={
                                                 F_DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), finalitzar_dni),
-                                                            MessageHandler(Filters.regex("/cancel"), cancel),
-                                                            MessageHandler(Filters.regex(".*"), incorrecte)],
+                                                        MessageHandler(Filters.regex("/cancel"), finalitzar_cancel),
+                                                        MessageHandler(Filters.regex(".*"), finalitzar_incorrecte)],
                                                 F_HORARI: [MessageHandler(Filters.regex("[0-9]+"), finalitzar_horari),
-                                                            MessageHandler(Filters.regex("/cancel"), cancel),
-                                                            MessageHandler(Filters.regex(".*"), incorrecte)],
+                                                           MessageHandler(Filters.regex("/cancel"), finalitzar_cancel),
+                                                           MessageHandler(Filters.regex(".*"), finalitzar_incorrecte)],
                                            },
-                                           fallbacks=[CommandHandler('cancel', cancel)]
+                                           fallbacks=[CommandHandler('cancel', finalitzar_cancel)]
                                            ))
 
 
@@ -370,17 +352,17 @@ TIPUS, INICI, FINAL = range(3)
 
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('informe', informe)],
                                            states={
-                                                TIPUS: [MessageHandler(Filters.regex("/cancel"), cancel),
+                                                TIPUS: [MessageHandler(Filters.regex("/cancel"), afegir_cancel),
                                                         MessageHandler(Filters.regex("/.*"), informe_tipus),
                                                         MessageHandler(Filters.regex(".*"), valor_incorrecte)],
                                                 INICI: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_inici),
-                                                        MessageHandler(Filters.regex("/cancel"), cancel),
+                                                        MessageHandler(Filters.regex("/cancel"), afegir_cancel),
                                                         MessageHandler(Filters.regex(".*"), valor_incorrecte)],
                                                 FINAL: [MessageHandler(Filters.regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"), informe_final),
-                                                        MessageHandler(Filters.regex("/cancel"), cancel),
+                                                        MessageHandler(Filters.regex("/cancel"), afegir_cancel),
                                                         MessageHandler(Filters.regex(".*"), valor_incorrecte)],
                                            },
-                                           fallbacks=[CommandHandler('cancel', cancel)]
+                                           fallbacks=[CommandHandler('cancel', afegir_cancel)]
                                            ))
 
 

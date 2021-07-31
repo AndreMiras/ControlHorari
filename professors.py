@@ -87,6 +87,15 @@ def llista_dni_presents():
     return llista_presents_actius
 
 
+def llista_dni_absents():
+    """Llista de DNIs dels professors fora del centre"""
+    dni = llista_dni_actius()
+    presents = llista_dni_presents()
+    for i in presents:
+        dni.remove(i)
+    return dni
+
+
 def llista_codis_horari():
     codis = []
     ct = connexio()
@@ -99,13 +108,13 @@ def llista_codis_horari():
     return codis
 
 
-def llista_dni_absents():
-    """Llista de DNIs dels professors fora del centre"""
-    dni = llista_dni_actius()
-    presents = llista_dni_presents()
-    for i in presents:
-        dni.remove(i)
-    return dni
+def es_codi_horari_actiu(codi):
+    # Comprova que el codi horari del professor és correcte
+    codis = llista_codis_horari()
+    if codi in codis:
+        return True
+    else:
+        return False
 
 
 def tots():
