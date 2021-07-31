@@ -1,15 +1,11 @@
-import random
+from random import choice
 from os import path
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler, Filters, ConversationHandler
 
-import registre
-import professors
-import guardia
-import substitucions
+import registre, professors, guardia, substitucions, informes
 from dades import *
 from utils import *
-from informes import *
 
 
 updater = Updater(token=TOKEN, use_context=True)
@@ -67,8 +63,14 @@ def menu_professors(update, context):
 
 
 def menu_gestio(update, context):
-    text = "/substitucio - afegir o finalitzar una substitució\n"
-    text += "/informe - informes d'assistència del professorat"
+    permisos = update.message.chat.username in GESTIO+ADMIN
+
+    if permisos:
+        text = "/substitucio - afegir o finalitzar una substitució\n"
+        text += "/informe - informes d'assistència del professorat"
+    else:
+        text = "No tens permisos per accedir a aquest menú"
+
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
@@ -172,14 +174,14 @@ SUBSTITUT = ['Nom', 'Cognom', 'Dni', 'Horari']
 
 
 def afegir(update, context):
+    permisos = update.message.chat.username in GESTIO + ADMIN
 
-    autoritzat = update.message.chat.username in GESTIO+ADMIN
-    if not autoritzat:
-        update.message.reply_text("No estàs autoritzat a realitzar aquesta acció")
-        return ConversationHandler.END
-    else:
+    if permisos:
         update.message.reply_text("Nom del substitut?\n/cancel per cancel·lar l'operació")
         return NOM
+    else:
+        update.message.reply_text("No tens permisos")
+        return ConversationHandler.END
 
 
 def afegir_nom(update, context):
@@ -251,15 +253,15 @@ dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('afegir'
 
 def finalitzar(update, context):
 
-    autoritzat = update.message.chat.username in GESTIO+ADMIN
+    permisos = update.message.chat.username in GESTIO+ADMIN
 
-    if not autoritzat:
-        update.message.reply_text("No estàs autoritzat a realitzar aquesta acció")
-        return ConversationHandler.END
-    else:
+    if permisos:
         substituts(update, context)
-        update.message.reply_text("Codi de l'horari del substitut?\n/cancel per cancel·lar l'operació")
+        update.message.reply_text("Codi de la substitució a finalitzar?\n/cancel per cancel·lar l'operació")
         return F_HORARI
+    else:
+        update.message.reply_text("No tens permisos")
+        return ConversationHandler.END
 
 
 def finalitzar_horari(update, context):
@@ -297,8 +299,9 @@ DADES_INFORME = [0, 'inici', 'final']
 
 
 def informe(update, context):
-    autoritzat = update.message.chat.username in GESTIO+ADMIN
-    if autoritzat:
+    permisos = update.message.chat.username in GESTIO+ADMIN
+
+    if permisos:
         text = "Tipus d'informe:\n"
         text += "1. Assistència: temps treballat per dia\n"
         text += "2. Absències: temps d'absència per dia\n"
@@ -306,7 +309,7 @@ def informe(update, context):
         update.message.reply_text(text)
         return TIPUS
     else:
-        update.message.reply_text("No autoritzat")
+        update.message.reply_text("No tens permisos")
         return ConversationHandler.END
 
 
@@ -337,9 +340,9 @@ def informe_final(update, context):
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
     if DADES_INFORME[0] == 1:
-        filename = informe_assistencia(DADES_INFORME[1], DADES_INFORME[2])
+        filename = informes.assistencia(DADES_INFORME[1], DADES_INFORME[2])
     else:
-        filename = informe_absencies(DADES_INFORME[1], DADES_INFORME[2])
+        filename = informes.absencies(DADES_INFORME[1], DADES_INFORME[2])
 
     context.bot.send_document(chat_id=update.effective_chat.id, document=open(filename, 'rb'))
     return ConversationHandler.END
@@ -383,12 +386,9 @@ def registre_dni(update, context):
 
 def registre_final_dni(update, context):
 
-    # Usuaris autoritzats
-    autoritzat = update.message.chat.username in REGISTRE+ADMIN
+    permisos = update.message.chat.username in REGISTRE+ADMIN
 
-    text = "No estàs autoritzat a realitzar aquesta acció"
-
-    if autoritzat:
+    if permisos:
         final_dni = update.message.text.upper()
         dades_prof = registre.professor_per_dni(final_dni)
 
@@ -396,24 +396,25 @@ def registre_final_dni(update, context):
             text = registre.registre_BD(dades_prof)
         else:
             text = "Codi incorrecte"
+    else:
+        text = "No tens permisos per realitzar aquesta acció"
 
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
 def registre_codi_barres(update, context):
 
-    # Usuaris autoritzats
-    autoritzat = update.message.chat.username in REGISTRE+ADMIN
+    permisos = update.message.chat.username in REGISTRE+ADMIN
 
-    text = "No estàs autoritzat a realitzar aquesta acció"
-
-    if autoritzat:
+    if permisos:
         dades_prof = registre.professor_per_codi_barres(update.message.text)
 
         if len(dades_prof)>0:
             text = registre.registre_BD(dades_prof)
         else:
             text = "Aquest codi de barres no està associat a cap professor"
+    else:
+        text = "No tens permisos per realitzar aquesta acció"
 
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
@@ -433,7 +434,7 @@ def eco(update, context):
 
 def resposta(update, context):
     missatges = ["Què?", "No t'entenc", "Missatge incorrecte", "Què vols dir?", "Repeteix-ho", "Torna-ho a dir"]
-    text = random.choice(missatges)
+    text = choice(missatges)
     context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
