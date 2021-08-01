@@ -212,15 +212,22 @@ def afegir_dni(update, context):
 def afegir_horari(update, context):
     SUBSTITUT[3] = int(update.message.text)
 
-    # Missatge confirmació
-    text = substitucions.afegir(SUBSTITUT[0], SUBSTITUT[1], SUBSTITUT[2], SUBSTITUT[3])
-    update.message.reply_text(text)
+    try:
+        # Missatge confirmació
+        text = substitucions.afegir(SUBSTITUT[0], SUBSTITUT[1], SUBSTITUT[2], SUBSTITUT[3])
+        update.message.reply_text(text)
 
-    # Imatge codi de barres
-    nom_fitxer = "./codis/" + SUBSTITUT[2] + ".png"
-    if path.isfile(nom_fitxer):
-        context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(nom_fitxer, 'rb'))
-    return ConversationHandler.END
+        # Imatge codi de barres
+        nom_fitxer = "./codis/" + SUBSTITUT[2] + ".png"
+        if path.isfile(nom_fitxer):
+            context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(nom_fitxer, 'rb'))
+
+    except Exception as e:
+        logging.error(e)
+        update.message.reply_text("Problema afegint la substitució")
+
+    finally:
+        return ConversationHandler.END
 
 
 def afegir_cancel(update, context):
@@ -272,9 +279,16 @@ def finalitzar(update, context):
 
 def finalitzar_horari(update, context):
     horari = int(update.message.text)
-    text = substitucions.finalitzar(horari)
-    update.message.reply_text(text)
-    return ConversationHandler.END
+    try:
+        text = substitucions.finalitzar(horari)
+
+    except Exception as e:
+        logging.error(e)
+        text = "Problema finalitzant la substitució"
+
+    finally:
+        update.message.reply_text(text)
+        return ConversationHandler.END
 
 
 def finalitzar_cancel(update, context):
@@ -341,13 +355,20 @@ def informe_inici(update, context):
 def informe_final(update, context):
     DADES_INFORME[2] = update.message.text
 
-    if DADES_INFORME[0] == 1:
-        filename = informes.assistencia(DADES_INFORME[1], DADES_INFORME[2])
-    else:
-        filename = informes.absencies(DADES_INFORME[1], DADES_INFORME[2])
+    try:
+        if DADES_INFORME[0] == 1:
+            filename = informes.assistencia(DADES_INFORME[1], DADES_INFORME[2])
+        else:
+            filename = informes.absencies(DADES_INFORME[1], DADES_INFORME[2])
 
-    context.bot.send_document(chat_id=update.effective_chat.id, document=open(filename, 'rb'))
-    return ConversationHandler.END
+        context.bot.send_document(chat_id=update.effective_chat.id, document=open(filename, 'rb'))
+
+    except Exception as e:
+        logging.error(e)
+        update.message.reply_text("Problema generant l'informe")
+
+    finally:
+        return ConversationHandler.END
 
 
 def informe_cancel(update, context):
@@ -404,10 +425,12 @@ def registre_final_dni(update, context):
             logging.error(e)
             text = "Problema accedint a la base de dades"
 
+        finally:
+            context.bot.send_message(chat_id=update.message.chat_id, text=text)
+
     else:
         text = "No tens permisos per realitzar aquesta acció"
-
-    context.bot.send_message(chat_id=update.message.chat_id, text=text)
+        context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
 def registre_codi_barres(update, context):
@@ -427,10 +450,12 @@ def registre_codi_barres(update, context):
             logging.error(e)
             text = "Problema accedint a la base de dades"
 
+        finally:
+            context.bot.send_message(chat_id=update.message.chat_id, text=text)
+
     else:
         text = "No tens permisos per realitzar aquesta acció"
-
-    context.bot.send_message(chat_id=update.message.chat_id, text=text)
+        context.bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
 dispatcher.add_handler(MessageHandler(Filters.regex('[A-z]?[0-9]{7,8}[A-z]'), registre_dni))
