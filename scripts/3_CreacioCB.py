@@ -28,11 +28,6 @@ def generaCodi(dni):
 profes['CodiBarres'] = profes['Dni'].apply(generaCodi)
 
 
-# Directori codi
-
-if not os.path.exists(dir_path + "/../codis"):
-    os.makedirs(dir_path + "/../codis")
-
 # Imprimir codi de barres
 for i in profes.index:
     codi = str(profes.loc[i, 'CodiBarres'])
