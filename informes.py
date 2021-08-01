@@ -123,8 +123,6 @@ def absencies(inici, final):
     informe = informe[['Data', 'Nom', 'TempsAbsencia']]
 
     # Generar fitxer
-    if not os.path.exists("./informes"):
-        os.makedirs("./informes")
     filename = "./informes/informe_absencies_" + inici + "_" + final + ".csv"
     informe.to_csv(filename, index=False)
 
@@ -154,8 +152,6 @@ def assistencia(inici, final):
     informe = informe[['Data','Nom','RegistreEntrada','RegistreSortida','TempsTreballat']]
 
     # Generar fitxer
-    if not os.path.exists("./informes"):
-        os.makedirs("./informes")
     filename = "./informes/informe_assistencia_" + inici + "_" + final +".csv"
     informe.to_csv(filename, index=False)
 
