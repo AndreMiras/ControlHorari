@@ -7,6 +7,12 @@ import registre, professors, guardia, substitucions, informes
 from dades import *
 from utils import *
 
+import logging
+logging.basicConfig( filename="./logs/main.log",
+                     filemode='a',
+                     level=logging.INFO,
+                     format= '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s')
+
 
 updater = Updater(token=TOKEN, use_context=True)
 dispatcher = updater.dispatcher
@@ -386,12 +392,18 @@ def registre_final_dni(update, context):
 
     if permisos:
         final_dni = update.message.text.upper()
-        dades_prof = registre.professor_per_dni(final_dni)
+        try:
+            dades_prof = registre.professor_per_dni(final_dni)
 
-        if len(dades_prof) > 0:
-            text = registre.registre_BD(dades_prof)
-        else:
-            text = "Codi incorrecte"
+            if len(dades_prof) > 0:
+                text = registre.registre_BD(dades_prof)
+            else:
+                text = "Codi incorrecte"
+
+        except Exception as e:
+            logging.error(e)
+            text = "Problema accedint a la base de dades"
+
     else:
         text = "No tens permisos per realitzar aquesta acció"
 
@@ -403,12 +415,18 @@ def registre_codi_barres(update, context):
     permisos = update.message.chat.username in REGISTRE+ADMIN
 
     if permisos:
-        dades_prof = registre.professor_per_codi_barres(update.message.text)
+        try:
+            dades_prof = registre.professor_per_codi_barres(update.message.text)
 
-        if len(dades_prof)>0:
-            text = registre.registre_BD(dades_prof)
-        else:
-            text = "Aquest codi de barres no està associat a cap professor"
+            if len(dades_prof)>0:
+                text = registre.registre_BD(dades_prof)
+            else:
+                text = "Aquest codi de barres no està associat a cap professor"
+
+        except Exception as e:
+            logging.error(e)
+            text = "Problema accedint a la base de dades"
+
     else:
         text = "No tens permisos per realitzar aquesta acció"
 
