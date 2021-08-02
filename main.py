@@ -38,7 +38,7 @@ def ajuda(update, context):
 
 
 def autor(update, context):
-    text = "Aquest bot ha sigut creat per Víctor Boix (@vboix2)"
+    text = "Aquest bot ha sigut creat per Víctor Boix (" + ADMIN[0] + ")"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
@@ -209,10 +209,9 @@ def afegir_dni(update, context):
 
 
 def afegir_horari(update, context):
-    SUBSTITUT[3] = int(update.message.text)
-
     try:
         # Missatge confirmació
+        SUBSTITUT[3] = int(update.message.text)
         text = substitucions.afegir(SUBSTITUT[0], SUBSTITUT[1], SUBSTITUT[2], SUBSTITUT[3])
         update.message.reply_text(text)
 
@@ -283,8 +282,8 @@ def finalitzar(update, context):
 
 
 def finalitzar_horari(update, context):
-    horari = int(update.message.text)
     try:
+        horari = int(update.message.text)
         text = substitucions.finalitzar(horari)
 
     except Exception as e:

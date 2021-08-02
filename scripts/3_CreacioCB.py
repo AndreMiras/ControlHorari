@@ -1,5 +1,8 @@
 """
 Genera el codi de barres a partir del número de DNI
+
+Requereix el fitxer /files/professors_dni.csv amb les columnes:
+,Departament,NomHorari,CodiHorari,Nom,Cognom,Dni
 """
 import pandas as pd
 import random
