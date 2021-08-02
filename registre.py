@@ -6,7 +6,7 @@ from dades import connexio
 def professor_per_codi_barres(codi):
     # Cercar dades professor per codi de barres
     ct = connexio()
-    query = ("SELECT Nom,CodiHorari,DNI FROM Professor WHERE CodiBarres = '" + codi[:12] + "';")
+    query = ("SELECT Nom,CodiHorari,DNI FROM Professor WHERE Actiu=1 AND CodiBarres = '" + codi[:12] + "';")
     with ct.cursor() as cursor:
         cursor.execute(query)
         dades_prof = cursor.fetchall()
@@ -17,7 +17,7 @@ def professor_per_codi_barres(codi):
 def professor_per_dni(dni):
     # Cerca les dades del professor a partir del final del dni
     ct = connexio()
-    query = ("SELECT Nom,CodiHorari,DNI FROM Professor WHERE SUBSTRING(DNI, LENGTH(DNI)-3, 4) = '" + dni + "';")
+    query = ("SELECT Nom,CodiHorari,DNI FROM Professor WHERE Actiu=1 AND SUBSTRING(DNI, LENGTH(DNI)-3, 4) = '" + dni + "';")
     with ct.cursor() as cursor:
         cursor.execute(query)
         dades_prof = cursor.fetchall()

@@ -120,7 +120,6 @@ def guardia_message(update, context):
 
 
 dispatcher.add_handler(CommandHandler('guardia', guardia_command))
-dispatcher.add_handler(MessageHandler(Filters.regex('[Gg]u[aà]rdia'), guardia_message))
 
 
 # ---------- PROFESSORS ----------
@@ -269,9 +268,15 @@ def finalitzar(update, context):
     permisos = update.message.chat.username in GESTIO+ADMIN
 
     if permisos:
-        substituts(update, context)
-        update.message.reply_text("Codi de la substitució a finalitzar?\n/cancel per cancel·lar l'operació")
-        return F_HORARI
+        if professors.substituts() != "No hi ha substituts":
+            substituts(update, context)
+            update.message.reply_text("Codi de la substitució a finalitzar?\n/cancel per cancel·lar l'operació")
+            return F_HORARI
+
+        else:
+            update.message.reply_text("No hi ha substituts")
+            return ConversationHandler.END
+
     else:
         update.message.reply_text("No tens permisos")
         return ConversationHandler.END
@@ -305,9 +310,9 @@ F_HORARI = 0
 
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('finalitzar', finalitzar)],
                                            states={
-                                                F_HORARI: [MessageHandler(Filters.regex("[0-9]+"), finalitzar_horari),
-                                                           MessageHandler(Filters.regex("/cancel"), finalitzar_cancel),
-                                                           MessageHandler(Filters.regex(".*"), finalitzar_incorrecte)],
+                                                F_HORARI: [MessageHandler(Filters.regex('[0-9]{1,2}'), finalitzar_horari),
+                                                           MessageHandler(Filters.regex('/cancel'), finalitzar_cancel),
+                                                           MessageHandler(Filters.regex('.*'), finalitzar_incorrecte)],
                                            },
                                            fallbacks=[CommandHandler('cancel', finalitzar_cancel)]
                                            ))
@@ -479,5 +484,6 @@ def resposta(update, context):
 
 dispatcher.add_handler(MessageHandler(Filters.regex('[Hh]ola[!]*|[Aa]d[ée]u[!]*'), eco))
 dispatcher.add_handler(MessageHandler(Filters.regex('.*'), resposta))
+dispatcher.add_handler(MessageHandler(Filters.regex('[Gg]u[aà]rdia'), guardia_message))
 
 updater.start_polling()
