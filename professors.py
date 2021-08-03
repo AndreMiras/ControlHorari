@@ -224,7 +224,7 @@ def absents():
 
 
 def guardia():
-    dia = dia_lectiu_actual()
+    dia = dia_actual()
     hora_lectiva = hora_lectiva_actual()
 
     if (hora_lectiva == 0) or (dia in [6,7]):
@@ -238,9 +238,9 @@ def guardia():
 
 
 def horari(codiHorari):
-    dia = dia_lectiu_actual()
+    dia = dia_actual()
     if dia in [6,7]:
-        text = "No estem en horari lectiu"
+        text = "Avui no hi ha classes"
     else:
         horari = df_horari_profe(codiHorari, dia)
         if len(horari.index) > 0:
@@ -249,6 +249,6 @@ def horari(codiHorari):
                 text += HORA[horari.loc[i, 'Hora'] - 1] + " " + horari.loc[i, 'Assignatura'] + " " + horari.loc[
                     i, 'Aula'] + " " + horari.loc[i, 'Grup'] + "\n"
         else:
-            text = "No hi ha horari per a aquest codi"
+            text = "Aquest codi no té cap horari assignat"
     return text
 

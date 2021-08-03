@@ -32,7 +32,7 @@ def hora_lectiva_actual():
     return hora_lectiva
 
 
-def dia_lectiu_actual():
+def dia_actual():
     """Torna un enter amb el dia de la setmana"""
     current_time = datetime.now()
     dia = current_time.weekday()

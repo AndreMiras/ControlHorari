@@ -2,6 +2,7 @@ from random import choice
 from os import path
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler, Filters, ConversationHandler
+from re import match
 
 import registre, professors, guardia, substitucions, informes
 from dades import *
@@ -53,7 +54,7 @@ dispatcher.add_handler(CommandHandler('autor', autor))
 
 
 def menu(update, context):
-    text = "/guardia - professors a substituir\n"
+    text = "/guardia - professors a substituir a l'hora actual\n"
     text += "/professors - llistats de professorat\n"
     text += "/gestio - informes i substitucions"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
@@ -64,7 +65,7 @@ def menu_professors(update, context):
     text += "/presents - professors al centre\n"
     text += "/absents - professors fora del centre\n"
     text += "/profes_guardia - professors de guàrdia a l'hora actual\n"
-    text += "/horari - horari dels professors"
+    text += "/horari - horari de tots els professors"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
@@ -82,7 +83,7 @@ def menu_gestio(update, context):
 
 def menu_substitut(update, context):
     text = "/afegir - afegir una substitució\n"
-    text += "/finalitzar - finalitzar substitució\n"
+    text += "/finalitzar - finalitzar una substitució\n"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
@@ -99,12 +100,12 @@ dispatcher.add_handler(CommandHandler('substitucio', menu_substitut))
 def guardia_command(update, context):
     if len(context.args) == 0:
         hora = hora_lectiva_actual()
-        dia = dia_lectiu_actual()
+        dia = dia_actual()
         text = guardia.llista(dia, hora)
 
-    elif context.args[0].isnumeric():
+    elif match("^[1-8]$", context.args[0]):
         hora = int(context.args[0])
-        dia = dia_lectiu_actual()
+        dia = dia_actual()
         text = guardia.llista(dia, hora)
 
     else:
@@ -114,7 +115,7 @@ def guardia_command(update, context):
 
 def guardia_message(update, context):
     hora = hora_lectiva_actual()
-    dia = dia_lectiu_actual()
+    dia = dia_actual()
     text = guardia.llista(dia, hora)
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
@@ -155,7 +156,7 @@ def horari(update, context):
         tots(update, context)
         text = "Indica /horari i el codi del professor\nPer exemple: /horari 9"
 
-    elif context.args[0].isnumeric():
+    elif match("^[0-9]{1,2}$", context.args[0]):
         codi_horari = int(context.args[0])
         text = professors.horari(codi_horari)
 
@@ -234,7 +235,7 @@ def afegir_cancel(update, context):
 
 
 def afegir_incorrecte(update, context):
-    update.message.reply_text("Valor incorrecte")
+    update.message.reply_text("Valor incorrecte\nOperació cancel·lada")
     return ConversationHandler.END
 
 
@@ -251,7 +252,7 @@ dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('afegir'
                                                 DNI: [MessageHandler(Filters.regex("[A-z]?[0-9]{8}[A-z]"), afegir_dni),
                                                       MessageHandler(Filters.regex("/cancel"), afegir_cancel),
                                                       MessageHandler(Filters.regex(".*"), afegir_incorrecte)],
-                                                HORARI: [MessageHandler(Filters.regex("[0-9]+"), afegir_horari),
+                                                HORARI: [MessageHandler(Filters.regex("^[0-9]{1,2}$"), afegir_horari),
                                                          MessageHandler(Filters.regex("/cancel"), afegir_cancel),
                                                          MessageHandler(Filters.regex(".*"), afegir_incorrecte)],
                                            },
@@ -301,7 +302,7 @@ def finalitzar_cancel(update, context):
 
 
 def finalitzar_incorrecte(update, context):
-    update.message.reply_text("Codi horari incorrecte")
+    update.message.reply_text("Valor incorrecte\nOperació cancel·lada")
     return ConversationHandler.END
 
 
@@ -309,7 +310,7 @@ F_HORARI = 0
 
 dispatcher.add_handler(ConversationHandler(entry_points=[CommandHandler('finalitzar', finalitzar)],
                                            states={
-                                                F_HORARI: [MessageHandler(Filters.regex('[0-9]{1,2}'), finalitzar_horari),
+                                                F_HORARI: [MessageHandler(Filters.regex('^[0-9]{1,2}$'), finalitzar_horari),
                                                            MessageHandler(Filters.regex('/cancel'), finalitzar_cancel),
                                                            MessageHandler(Filters.regex('.*'), finalitzar_incorrecte)],
                                            },
@@ -327,8 +328,8 @@ def informe(update, context):
 
     if permisos:
         text = "Tipus d'informe:\n"
-        text += "1. Assistència: temps treballat per dia\n"
-        text += "2. Absències: temps d'absència per dia\n"
+        text += "1. Assistència: temps treballat segons el registre d'entrades i sortides\n"
+        text += "2. Absències: temps d'absència segons l'horari de cada professor\n"
         text += "/cancel per aturar"
         update.message.reply_text(text)
         return TIPUS
@@ -381,7 +382,7 @@ def informe_cancel(update, context):
 
 
 def informe_incorrecte(update, context):
-    update.message.reply_text("Valor incorrecte")
+    update.message.reply_text("Valor incorrecte\nOperació cancel·lada")
     return ConversationHandler.END
 
 
