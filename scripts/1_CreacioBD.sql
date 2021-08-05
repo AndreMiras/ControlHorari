@@ -22,7 +22,7 @@ CREATE TABLE `Corbera21`.`Horari` (
   `Assignatura` VARCHAR(20) NOT NULL,
   `CodiHorari` INT NOT NULL,
   `Aula` VARCHAR(10) NULL,
-  `Grup` VARCHAR(20) NULL,
+  `Grup` VARCHAR(30) NULL,
   PRIMARY KEY (`idHorari`));
 
 CREATE TABLE `Corbera21`.`Registre` (
