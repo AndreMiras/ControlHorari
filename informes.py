@@ -2,13 +2,8 @@ import pandas as pd
 from datetime import datetime
 
 from dades import connexio
+from dades import HORA_INICI, HORA_FINAL, FESTIUS
 from professors import df_professors
-
-HORA_INICI = {1:'8:10:00', 2:'9:05:00', 3:'10:00:00', 4:'10:55:00', 5:'11:25:00', 6:'11:55:00', 7:'12:50:00', 8:'13:45:00'}
-HORA_FINAL = {1:'9:05:00', 2:'10:00:00', 3:'10:55:00', 4:'11:25:00', 5:'11:55:00', 6:'12:50:00', 7:'13:45:00', 8:'14:40:00'}
-FESTIUS = ['2021-9-11', '2021-10-11', '2021-10-12', '2021-11-1', '2021-12-6', '2021-12-7', '2021-12-8',
-           '2022-2-28',
-           '2022-5-1', '2022-6-6']
 
 
 def df_dates(inici, final):
@@ -32,7 +27,7 @@ def df_dates(inici, final):
     dates = dates.loc[dates['DiaSetmana'] < 6, :]
     # Eliminar festius
     for f in FESTIUS:
-        dates.drop(dates.index[dates['Data']==f], inplace=True)
+        dates.drop(dates.index[dates['Data'] == f], inplace=True)
 
     dates['Data'] = dates['Data'].apply(lambda d: d.strftime("%Y-%m-%d"))
     return dates
