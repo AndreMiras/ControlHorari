@@ -6,11 +6,14 @@ from professors import df_professors
 
 HORA_INICI = {1:'8:10:00', 2:'9:05:00', 3:'10:00:00', 4:'10:55:00', 5:'11:25:00', 6:'11:55:00', 7:'12:50:00', 8:'13:45:00'}
 HORA_FINAL = {1:'9:05:00', 2:'10:00:00', 3:'10:55:00', 4:'11:25:00', 5:'11:55:00', 6:'12:50:00', 7:'13:45:00', 8:'14:40:00'}
+FESTIUS = ['2021-9-11', '2021-10-11', '2021-10-12', '2021-11-1', '2021-12-6', '2021-12-7', '2021-12-8',
+           '2022-2-28',
+           '2022-5-1', '2022-6-6']
 
 
 def df_dates(inici, final):
     """
-    Genera un DataFrame amb les dates de dilluns a divendres entre inici i final
+    Genera un DataFrame amb els dies laborables entre la data inicial i final
     Columnes: Data, DiaSetmana
     """
     v_inici = [int(i) for i in inici.split("-")]
@@ -21,8 +24,16 @@ def df_dates(inici, final):
 
     dies = pd.date_range(data_inici, data_final).tolist()
     dates = pd.DataFrame({'Data': dies})
+
+    # Calcular dia de la setmana
     dates['DiaSetmana'] = dates['Data'].apply(lambda d: d.weekday() + 1)
+
+    # Eliminar caps de setmana
     dates = dates.loc[dates['DiaSetmana'] < 6, :]
+    # Eliminar festius
+    for f in FESTIUS:
+        dates.drop(dates.index[dates['Data']==f], inplace=True)
+
     dates['Data'] = dates['Data'].apply(lambda d: d.strftime("%Y-%m-%d"))
     return dates
 
@@ -102,9 +113,10 @@ def calcul_temps_absencia(row):
 
 
 def absencies(inici, final):
-
-    # Informe del temps d'absència d'un professor segons el seu horari
-    # Data, Nom, Temps absència
+    """
+    Informe del temps d'absència d'un professor segons el seu horari
+    Data, Nom, Temps absència
+    """
 
     dates = df_dates(inici, final)
     horari = df_horari()
@@ -129,9 +141,10 @@ def absencies(inici, final):
 
 
 def assistencia(inici, final):
-
-    # Informe d'assistència del professorat:
-    # Data, Nom, RegistreEntrada, RegistreSortida, TempsTreballat
+    """
+    Informe d'assistència del professorat:
+    Data, Nom, RegistreEntrada, RegistreSortida, TempsTreballat
+    """
 
     dates = df_dates(inici, final)
     registres = df_registres(inici, final)
