@@ -1,7 +1,6 @@
 import pandas as pd
 import professors
-from dades import connexio
-from utils import *
+from dades import connexio, HORA
 
 
 def df_classes(dia, hora):

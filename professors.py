@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime
 from utils import *
-from dades import connexio
+from dades import connexio, HORA
 
 
 def df_professors():

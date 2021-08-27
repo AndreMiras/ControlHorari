@@ -1,7 +1,5 @@
 from datetime import datetime
 
-HORA = ['8:10','9:05','10:00','10:55','11:25','11:55','12:50','13:45','16:00']
-
 
 def hora_lectiva_actual():
     """Torna un enter amb l'hora lectiva actual segons l'horari del centre"""
