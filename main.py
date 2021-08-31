@@ -39,7 +39,7 @@ def ajuda(update, context):
 
 
 def autor(update, context):
-    text = "Aquest bot ha sigut creat per Víctor Boix (" + ADMIN[0] + ")"
+    text = "Aquest bot ha sigut creat per Víctor Boix (@" + ADMIN[0] + ")"
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
