@@ -9,7 +9,8 @@ from dades import *
 from utils import *
 
 import logging
-logging.basicConfig( filename="./logs/main.log",
+dir_path = path.dirname(path.realpath(__file__))
+logging.basicConfig( filename=dir_path + "/logs/main.log",
                      filemode='a',
                      level=logging.INFO,
                      format= '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s')
