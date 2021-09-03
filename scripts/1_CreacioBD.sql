@@ -19,9 +19,9 @@ CREATE TABLE `Corbera21`.`Horari` (
   `idHorari` INT NOT NULL AUTO_INCREMENT,
   `Dia` INT NOT NULL,
   `Hora` INT NOT NULL,
-  `Assignatura` VARCHAR(20) NOT NULL,
+  `Assignatura` VARCHAR(30) NOT NULL,
   `CodiHorari` INT NOT NULL,
-  `Aula` VARCHAR(10) NULL,
+  `Aula` VARCHAR(30) NULL,
   `Grup` VARCHAR(30) NULL,
   PRIMARY KEY (`idHorari`));
 

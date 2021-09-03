@@ -1,5 +1,5 @@
 """
-Genera el fitxer /files/professors_bd.csv necessari per a la importació a la BD
+Genera el fitxer /files/professors_cb.csv necessari per a la creació dels codis de barres
 
 Requereix el fitxer /files/professors.csv amb les columnes:
 DNI,Nom,Cognom,Departament,CodiHorari
@@ -21,4 +21,4 @@ profes['CodiHorari'] = profes['CodiHorari'].astype(int)
 profes['Dni'] = profes['Dni'].apply(lambda s: re.sub('(^0)', '', s))
 
 # Exportar dades
-profes.to_csv(dir_path + '/../files/professors_bd.csv', index=False)
+profes.to_csv(dir_path + '/../files/professors_cb.csv', index=False)
