@@ -8,6 +8,7 @@ from dades import connexio
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 profes = pd.read_csv(dir_path + '/../files/professors_bd.csv', sep=",")
+profes.fillna('', inplace=True)
 ct = connexio()
 
 # ----------- Professor -------------
@@ -18,7 +19,7 @@ for i in profes.index:
     Cognom = profes.loc[i, 'Cognom']
     CodiHorari = str(profes.loc[i,'CodiHorari'])
     CodiBarres = str(profes.loc[i,'CodiBarres'])
-    Departament = "" #profes.loc[i,'Departament']
+    Departament = profes.loc[i,'Departament']
 
     insert = "INSERT INTO Professor (Dni, Nom, Cognom, CodiHorari, CodiBarres, Departament, Actiu, Substitut) " \
              "VALUES ('" + Dni + "', '" + Nom + "', '" + Cognom + "', " + CodiHorari + ", " \
