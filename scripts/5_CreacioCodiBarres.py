@@ -32,6 +32,7 @@ profes['CodiBarres'] = profes['Dni'].apply(generaCodi)
 for i in profes.index:
     codi = str(profes.loc[i, 'CodiBarres'])
     nom = profes.loc[i, 'Nom'] + profes.loc[i, 'Cognom']
+    nom = nom.replace(" ","")
     my_code = EAN13(codi, writer=ImageWriter())
     my_code.save(dir_path + "/../codis/" + nom)
 
