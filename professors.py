@@ -51,7 +51,7 @@ def df_horari_profe(codi, dia):
 def df_profes_guardia(dia, hora):
     """DataFrame amb el nom dels professors amb G o Gp al dia i hora indicats"""
     ct = connexio()
-    query = ("SELECT CodiHorari FROM Horari WHERE Dia= " + str(dia) + " AND Hora = " + str(hora) + " AND (Assignatura = 'G' OR Assignatura = 'Gp')")
+    query = ("SELECT CodiHorari FROM Horari WHERE Dia= " + str(dia) + " AND Hora = " + str(hora) + " AND (Assignatura = 'GUARDIA' OR Assignatura = 'GP')")
     with ct.cursor() as cursor:
         cursor.execute(query)
         profes_g = pd.DataFrame(cursor.fetchall(), columns=['CodiHorari'])
