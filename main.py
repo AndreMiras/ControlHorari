@@ -484,7 +484,8 @@ def resposta(update, context):
 
 
 dispatcher.add_handler(MessageHandler(Filters.regex('[Hh]ola[!]*|[Aa]d[ée]u[!]*'), eco))
-dispatcher.add_handler(MessageHandler(Filters.regex('.*'), resposta))
 dispatcher.add_handler(MessageHandler(Filters.regex('[Gg]u[aà]rdia'), guardia_message))
+dispatcher.add_handler(MessageHandler(Filters.regex('.*'), resposta))
+
 
 updater.start_polling()
