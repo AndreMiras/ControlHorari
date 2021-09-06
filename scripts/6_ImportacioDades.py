@@ -7,11 +7,26 @@ import os
 from dades import connexio
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-profes = pd.read_csv(dir_path + '/../files/professors_bd.csv', sep=",")
-profes.fillna('', inplace=True)
 ct = connexio()
 
-# ----------- Professor -------------
+
+# ----------- Buidar taules --------------
+
+# Eliminació taula Professor
+with ct.cursor() as cursor:
+    cursor.execute("DELETE FROM Professor;")
+    ct.commit()
+
+# Eliminació taula Horari
+with ct.cursor() as cursor:
+    cursor.execute("DELETE FROM Horari;")
+    ct.commit()
+
+
+# ----------- Taula Professor -------------
+
+profes = pd.read_csv(dir_path + '/../files/professors_bd.csv', sep=",")
+profes.fillna('', inplace=True)
 
 for i in profes.index:
     Dni = profes.loc[i,'Dni']
@@ -30,11 +45,9 @@ for i in profes.index:
         ct.commit()
 
 
-# ---------- Horari -----------
+# ---------- Taula Horari -----------
 
-# Importació de dades dels horaris
 horari = pd.read_csv(dir_path + '/../files/horari_bd.csv', sep=",", dtype=str)
-
 horari = horari.fillna('')
 
 for i in horari.index:

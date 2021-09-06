@@ -1,3 +1,4 @@
+DROP SCHEMA IF EXISTS Corbera21;
 CREATE SCHEMA Corbera21;
 USE Corbera21;
 
@@ -39,6 +40,6 @@ SET GLOBAL event_scheduler = ON;
 CREATE EVENT sortida_profes
   ON SCHEDULE
     EVERY 1 DAY
-    STARTS '2021-09-01 20:30:00'
+    STARTS '2021-09-06 20:30:00'
   DO
     UPDATE Registre SET HoraSortida = '14:45:00' WHERE HoraSortida IS NULL;
