@@ -91,6 +91,7 @@ def menu_substitut(update, context):
 dispatcher.add_handler(CommandHandler('menu', menu))
 dispatcher.add_handler(MessageHandler(Filters.regex('[Mm]en[uú]'), menu))
 dispatcher.add_handler(CommandHandler('professors', menu_professors))
+dispatcher.add_handler(CommandHandler('profes', menu_professors))
 dispatcher.add_handler(CommandHandler('gestio', menu_gestio))
 dispatcher.add_handler(CommandHandler('substitucio', menu_substitut))
 
@@ -171,6 +172,7 @@ dispatcher.add_handler(CommandHandler('tots', tots))
 dispatcher.add_handler(CommandHandler('presents', presents))
 dispatcher.add_handler(CommandHandler('absents', absents))
 dispatcher.add_handler(CommandHandler('profes_guardia', profes_guardia))
+dispatcher.add_handler(CommandHandler('profesguardia', profes_guardia))
 dispatcher.add_handler(CommandHandler('horari', horari))
 
 
