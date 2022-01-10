@@ -110,7 +110,7 @@ def calcul_temps_absencia(row):
 def absencies(inici, final):
     """
     Informe del temps d'absència d'un professor segons el seu horari
-    Data, Nom, Temps absència
+    Data, Nom, Temps absència, Hora entrada, Hora sortida
     """
 
     dates = df_dates(inici, final)
@@ -126,7 +126,7 @@ def absencies(inici, final):
     informe['TempsAbsencia'] = informe.apply(calcul_temps_absencia, axis=1)
     informe = informe.loc[informe['TempsAbsencia'] > pd.Timedelta("0 days 00:00:59"),:]
     informe['TempsAbsencia'] = informe['TempsAbsencia'].apply(format_hora)
-    informe = informe[['Data', 'Nom', 'TempsAbsencia']]
+    informe = informe[['Data', 'Nom', 'TempsAbsencia', 'RegistreEntrada', 'RegistreSortida']]
 
     # Generar fitxer
     filename = "./informes/informe_absencies_" + inici + "_" + final + ".csv"
