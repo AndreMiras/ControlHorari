@@ -126,6 +126,8 @@ def absencies(inici, final):
     informe['TempsAbsencia'] = informe.apply(calcul_temps_absencia, axis=1)
     informe = informe.loc[informe['TempsAbsencia'] > pd.Timedelta("0 days 00:00:59"),:]
     informe['TempsAbsencia'] = informe['TempsAbsencia'].apply(format_hora)
+    informe['RegistreEntrada'] = informe['RegistreEntrada'].apply(format_hora)
+    informe['RegistreSortida'] = informe['RegistreSortida'].apply(format_hora)
     informe = informe[['Data', 'Nom', 'TempsAbsencia', 'RegistreEntrada', 'RegistreSortida']]
 
     # Generar fitxer
