@@ -1,5 +1,5 @@
 from random import choice
-from os import path
+from os import environ, path
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler, Filters, ConversationHandler
 from re import match
@@ -16,7 +16,7 @@ logging.basicConfig( filename=dir_path + "/logs/main.log",
                      format= '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s')
 
 
-updater = Updater(token=TOKEN, use_context=True)
+updater = Updater(token=environ.get('TOKEN'), use_context=True)
 dispatcher = updater.dispatcher
 
 
